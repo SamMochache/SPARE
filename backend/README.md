@@ -41,10 +41,13 @@ The custom `accounts.User` model must be present before the first migration. Do 
 - `GET /api/v1/health/` — public health check.
 - `POST /api/v1/auth/token/` — obtain JWT access and refresh tokens with Django username/password.
 - `POST /api/v1/auth/token/refresh/` — refresh an access token.
+- `POST /api/v1/auth/logout/` — blacklist a refresh token to revoke further refreshes.
 - `GET/PATCH /api/v1/auth/me/` — view or update the authenticated user's own first name, last name, and email. Username and role are read-only.
 - `GET /api/schema/` — OpenAPI schema.
 - `GET /api/docs/` — Swagger UI.
 - `/admin/` — Django admin for authorized administrators.
+
+The logout endpoint expects the refresh token in the request body as `{"refresh": "<refresh-token>"}`. Token blacklist support is enabled in Django settings. Clients should also discard their local access token on logout; already-issued access tokens remain valid until their short expiry.
 
 ## Roles and permissions
 
