@@ -86,7 +86,7 @@ class PurchaseOrderViewSet(BranchScopeMixin, viewsets.ModelViewSet):
     def order(self, request, pk=None):
         with transaction.atomic():
             order = get_object_or_404(
-                self.get_queryset().select_for_update(),
+                self.get_queryset().select_for_update(of=("self",)),
                 pk=pk,
             )
             if order.status != PurchaseOrder.Status.DRAFT:
@@ -108,7 +108,7 @@ class PurchaseOrderViewSet(BranchScopeMixin, viewsets.ModelViewSet):
 
         with transaction.atomic():
             order = get_object_or_404(
-                self.get_queryset().select_for_update(),
+                self.get_queryset().select_for_update(of=("self",)),
                 pk=pk,
             )
             if order.status not in (PurchaseOrder.Status.ORDERED, PurchaseOrder.Status.PARTIALLY_RECEIVED):
@@ -174,7 +174,7 @@ class PurchaseOrderViewSet(BranchScopeMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=("post",), url_path="cancel")
     def cancel(self, request, pk=None):
         with transaction.atomic():
-            order = get_object_or_404(self.get_queryset().select_for_update(), pk=pk)
+            order = get_object_or_404(self.get_queryset().select_for_update(of=("self",)), pk=pk)
             if order.status not in (PurchaseOrder.Status.DRAFT, PurchaseOrder.Status.ORDERED):
                 raise ValidationError({"status": "Only draft or not-yet-received orders can be cancelled."})
             if order.items.filter(quantity_received__gt=0).exists():
