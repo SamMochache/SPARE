@@ -10,6 +10,12 @@ class StockBalanceAdmin(admin.ModelAdmin):
     search_fields = ("product__sku", "product__name", "branch__name")
     readonly_fields = ("branch", "product", "quantity_on_hand", "updated_at")
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(StockMovement)
 class StockMovementAdmin(admin.ModelAdmin):
