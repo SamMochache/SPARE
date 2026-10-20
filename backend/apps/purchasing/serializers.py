@@ -91,7 +91,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         user = request.user
         if not (user.is_superuser or user.role == "owner"):
-            validated_data["branch_id"] = user.branch_id
+            validated_data["branch"] = user.branch
         order = PurchaseOrder.objects.create(created_by=user, **validated_data)
         PurchaseOrderItem.objects.bulk_create([
             PurchaseOrderItem(purchase_order=order, **item) for item in items_data
