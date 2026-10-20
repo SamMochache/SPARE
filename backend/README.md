@@ -173,3 +173,17 @@ Return example:
 ```
 
 M-Pesa is only stored as a payment-method label at this stage. This API does not initiate payments, verify Daraja callbacks, or confirm settlement; do not treat an M-Pesa-labelled sale as proof of payment. Refund records and stock returns are audit records, not automated money transfers. Run Django checks and tests against a configured database before production use.
+
+
+### Reporting and dashboard
+
+All reporting endpoints require an authenticated active staff account. Non-owner staff can only report on their assigned active branch. Owners and superusers can optionally pass an active `branch` ID or omit it to report across branches.
+
+- `GET /api/v1/reports/dashboard/` — dashboard KPIs for sales, net revenue, refunds, units sold, current stock, estimated inventory cost value, low-stock count, purchase orders, and recorded returns.
+- `GET /api/v1/reports/sales/` — daily sale counts, gross revenue, recorded refunds, and net revenue.
+- `GET /api/v1/reports/inventory/` — stock totals, estimated cost valuation, and low-stock products.
+- `GET /api/v1/reports/top-products/` — top 20 products by units sold with recorded item sales value.
+
+All reports accept optional `start_date=YYYY-MM-DD` and `end_date=YYYY-MM-DD`; by default the window is the latest 30 calendar days including today in the configured Africa/Nairobi timezone. Date ranges where start is after end are rejected. Dashboard/inventory also accept `low_stock_threshold` (default 5, zero allowed). Results use the current catalogue cost price for estimated stock valuation. Product sales value is based on sale-line snapshots and is before sale-level discounts; it is not a profit calculation.
+
+The figures are operational records, not audited accounting statements. Recorded payment methods do not verify settlement, and M-Pesa integration is not implemented. Run the report tests and full backend checks before merging.
