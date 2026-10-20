@@ -47,7 +47,7 @@ See [backend/README.md](backend/README.md) for setup, API endpoints, permissions
 2. **Product catalogue:** categories, SKUs, prices, filtering, pagination, and role-protected CRUD/archive endpoints — implemented in PR #11.
 3. **Inventory:** branch stock balances, append-only movement ledger, transactional receipts/adjustments, and non-negative stock integrity — implemented in PR #12.
 4. **Purchasing:** supplier management, draft/order/cancel workflows, partial goods receipt, and stock-ledger integration — implemented in PR #13. Supplier invoicing and accounts payable remain future work.
-5. **POS and financial integrity:** transactional checkout, server-side totals, stock checks, idempotency, sale history, returns/refunds, and payment records.
-6. **Reporting and integration:** dashboard/report endpoints, API documentation, frontend API client integration, tests, and deployment instructions.
+5. **POS and financial integrity:** transactional checkout, server-side totals, stock checks, idempotency, sale history, return/refund audit records — implemented in PR #14. External payment-provider verification and settlement remain future work.
+6. **Reporting and integration:** dashboard/report endpoints, frontend API client integration, integration tests, and deployment instructions.
 
 Each stage should be implemented on a focused feature branch and reviewed before merging. No CI/CD workflows are part of this implementation plan.

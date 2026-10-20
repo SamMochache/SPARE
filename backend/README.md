@@ -1,6 +1,6 @@
 # AutoParts Pro API
 
-Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, health checks, OpenAPI docs, role permissions, and branch-scoped access primitives. The product catalogue, branch-scoped inventory, supplier, and purchase-order APIs are implemented in staged PRs; sales and payment modules remain future stages.
+Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, health checks, OpenAPI docs, role permissions, and branch-scoped access primitives. The product catalogue, branch-scoped inventory, supplier, and purchase-order APIs are implemented in staged PRs; transactional POS checkout, sale history, and return workflows are implemented; external payment-provider verification remains future work.
 
 ## Requirements
 
@@ -136,3 +136,40 @@ python manage.py spectacular --validate --file schema.yml
 ## Environment variables
 
 See `.env.example`. Never commit `.env`, production credentials, or payment-provider secrets.
+
+
+### Point of sale and sales
+
+All endpoints require JWT authentication. Sales are scoped to the assigned branch; owners and superusers can query across branches. Cashiers, managers, and owners can process checkout and returns; staff with read access can view sale history.
+
+- `POST /api/v1/sales/checkout/` — complete a sale atomically, calculate totals from current server-side product prices, decrement stock, and append sale movements to the stock ledger.
+- `GET /api/v1/sales/` — list branch-visible sales; supports `status`, `payment_method`, `sale_number`, `from`, and `to` filters.
+- `GET /api/v1/sales/{id}/` — sale detail with item price snapshots.
+- `POST /api/v1/sales/{id}/returns/` — process a full or partial item return, restore stock, append return movements, and record a refund audit record.
+
+Checkout example:
+
+```json
+{
+  "sale_number": "POS-1001",
+  "idempotency_key": "checkout-request-1001",
+  "payment_method": "cash",
+  "discount": "100.00",
+  "items": [{"product": 1, "quantity": 2}]
+}
+```
+
+Branch staff are automatically scoped to their active branch. Owners/superusers must include an active `branch` ID. The backend ignores browser-supplied unit prices and computes line totals from the catalogue. Checkout locks product and stock rows in a database transaction; insufficient stock or a duplicate sale number rolls the entire operation back. Send a stable `idempotency_key` when retrying a checkout after a network timeout to avoid processing the same request twice.
+
+Return example:
+
+```json
+{
+  "return_number": "RET-1001",
+  "reason": "Incorrect part supplied",
+  "refund_method": "cash",
+  "items": [{"sale_item": 1, "quantity": 1}]
+}
+```
+
+M-Pesa is only stored as a payment-method label at this stage. This API does not initiate payments, verify Daraja callbacks, or confirm settlement; do not treat an M-Pesa-labelled sale as proof of payment. Refund records and stock returns are audit records, not automated money transfers. Run Django checks and tests against a configured database before production use.
