@@ -1,6 +1,6 @@
 # AutoParts Pro API
 
-Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, a health endpoint, OpenAPI docs, role permissions, and branch-scoped access primitives. Catalog, inventory, purchasing, sales, and payment modules will be implemented in later stages.
+Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, health checks, OpenAPI docs, role permissions, and branch-scoped access primitives. The product catalogue API is now implemented; inventory, purchasing, sales, and payment modules remain future stages.
 
 ## Requirements
 
@@ -38,34 +38,64 @@ The custom `accounts.User` model must be present before the first migration. If 
 
 ## Endpoints
 
+### Authentication and system
+
 - `GET /api/v1/health/` — public health check.
 - `POST /api/v1/auth/token/` — obtain JWT access and refresh tokens with Django username/password.
 - `POST /api/v1/auth/token/refresh/` — refresh an access token.
 - `POST /api/v1/auth/logout/` — blacklist a refresh token to revoke further refreshes.
-- `GET/PATCH /api/v1/auth/me/` — view or update the authenticated user's own first name, last name, and email. Username and role are read-only.
+- `GET/PATCH /api/v1/auth/me/` — view/update the authenticated user's first name, last name, and email. Username and role are read-only.
 - `GET /api/schema/` — OpenAPI schema.
 - `GET /api/docs/` — Swagger UI.
 - `/admin/` — Django admin for authorized administrators.
 
-The logout endpoint expects the refresh token in the request body as `{"refresh": "<refresh-token>"}`. Token blacklist support is enabled in Django settings. Clients should also discard their local access token on logout; already-issued access tokens remain valid until their short expiry.
+### Product catalogue
 
-## Roles, branches, and permissions
+All catalogue endpoints require authentication. Any active authenticated staff member may read the catalogue. Only owners, managers, and inventory staff may create, update, or archive catalogue records.
+
+- `GET /api/v1/categories/` — list categories.
+- `POST /api/v1/categories/` — create a category (owner/manager/inventory).
+- `GET /api/v1/categories/{id}/` — category details.
+- `PATCH /api/v1/categories/{id}/` — update a category.
+- `DELETE /api/v1/categories/{id}/` — archive a category.
+- `GET /api/v1/products/` — list products.
+- `POST /api/v1/products/` — create a product.
+- `GET /api/v1/products/{id}/` — product details.
+- `PATCH /api/v1/products/{id}/` — update a product.
+- `DELETE /api/v1/products/{id}/` — archive a product rather than permanently deleting it.
+
+Product list query parameters:
+
+- `search` — case-insensitive match against name, SKU, brand, barcode, and description.
+- `category` — filter by category ID.
+- `brand` — case-insensitive brand filter.
+- `min_price` and `max_price` — filter on selling price.
+- `is_active=true|false` — include active or archived records. Without this parameter, only active records are returned.
+- `ordering` — one of `name`, `sku`, `brand`, `cost_price`, `selling_price`, `created_at`, or `updated_at`; prefix with `-` for descending order.
+- `page` — page number. Results use the configured page-number pagination (25 per page by default).
+
+Example: `GET /api/v1/products/?search=filter&brand=bosch&min_price=100&max_price=2000&page=1`.
+
+Prices use decimal fields; the API validates non-negative amounts and case-insensitive duplicate SKUs/barcodes. Product records intentionally do not contain a stock quantity: stock-on-hand belongs in the future inventory ledger, separated by branch. Catalogue records are shared product definitions; branch restrictions will apply to branch-owned inventory and transaction records.
+
+The logout endpoint expects the refresh token in the request body as `{"refresh": "<refresh-token>"}`. Clients should also discard their local access token on logout; already-issued access tokens remain valid until their short expiry.
+
+## Roles and branches
 
 Users have one of five roles: `owner`, `manager`, `cashier`, `inventory`, or `accountant`. Branch records and staff assignments can be managed through Django admin. Public self-registration is intentionally not exposed.
 
 - Owners and Django superusers can access records across branches.
-- Non-owner staff are restricted to the branch assigned to their account.
+- Non-owner staff are restricted to their assigned branch when branch-scoped APIs apply the shared permissions.
 - Unassigned non-owner staff receive no branch records and cannot create branch-owned records.
-- `BranchScopedQuerysetMixin` filters list/queryset results for views whose model has a `branch` foreign key.
-- `BranchObjectPermission` protects object-level access. Use it on detail/update/delete views as well as the queryset mixin.
-- `OwnerOrManager`, `InventoryStaff`, `SalesStaff`, and `FinanceStaff` provide role gates for domain operations.
-
-These are reusable security building blocks; they only protect a domain endpoint when that endpoint explicitly applies the appropriate permission/mixin. Branch-level access has not yet been wired into catalogue, inventory, purchasing, or sales endpoints because those modules are not implemented yet.
+- `BranchScopedQuerysetMixin` and `BranchObjectPermission` are reusable controls; future branch-owned endpoints must explicitly apply them.
 
 ## Checks
 
+Run from `backend/`:
+
 ```bash
 python manage.py check
+python manage.py makemigrations --check --dry-run
 python manage.py test
 python manage.py spectacular --validate --file schema.yml
 ```
