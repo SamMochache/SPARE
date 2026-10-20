@@ -1,6 +1,6 @@
 # AutoParts Pro API
 
-Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, health checks, OpenAPI docs, role permissions, and branch-scoped access primitives. The product catalogue API is now implemented; inventory, purchasing, sales, and payment modules remain future stages.
+Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, health checks, OpenAPI docs, role permissions, and branch-scoped access primitives. The product catalogue and branch-scoped inventory APIs are implemented in staged PRs; purchasing, sales, and payment modules remain future stages.
 
 ## Requirements
 
@@ -79,6 +79,21 @@ Example: `GET /api/v1/products/?search=filter&brand=bosch&min_price=100&max_pric
 Prices use decimal fields; the API validates non-negative amounts and case-insensitive duplicate SKUs/barcodes. Product records intentionally do not contain a stock quantity: stock-on-hand belongs in the future inventory ledger, separated by branch. Catalogue records are shared product definitions; branch restrictions will apply to branch-owned inventory and transaction records.
 
 The logout endpoint expects the refresh token in the request body as `{"refresh": "<refresh-token>"}`. Clients should also discard their local access token on logout; already-issued access tokens remain valid until their short expiry.
+
+### Inventory and stock
+
+All inventory endpoints require authentication. Any active staff member can read stock for their assigned branch; only owners, managers, and inventory staff can receive or adjust stock.
+
+- `GET /api/v1/stock-balances/` — paginated current stock by branch and product; optional `branch` and `product` filters.
+- `GET /api/v1/stock-balances/{id}/` — one stock balance.
+- `GET /api/v1/stock-movements/` — immutable movement ledger; optional `branch`, `product`, `movement_type`, and `reference` filters.
+- `GET /api/v1/stock-movements/{id}/` — one ledger entry.
+- `POST /api/v1/stock/receive/` — receive supplier/opening stock. Body: `{"product": 1, "quantity": 12, "reason": "Supplier delivery", "reference": "GRN-100"}`.
+- `POST /api/v1/stock/adjust/` — correct a count using a non-zero signed `quantity_delta`. Body: `{"product": 1, "quantity_delta": -2, "reason": "Damaged stock"}`.
+
+Owners/superusers must include a valid active `branch` ID in write requests. Other staff are automatically scoped to their assigned active branch; attempts to select another branch are rejected. Stock-changing operations use a database transaction and lock the product row, update the current balance, and append an audit movement atomically. Stock cannot fall below zero. Movement rows are read-only through the API and Django admin.
+
+The `sale` and `return` movement types are reserved for the future checkout/returns workflow; this inventory API does not yet implement sales or payment processing.
 
 ## Roles and branches
 
