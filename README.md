@@ -45,7 +45,7 @@ See [backend/README.md](backend/README.md) for setup, API endpoints, permissions
 
 1. **Foundation and access control:** Django project, environment configuration, Neon support, JWT, roles, and branch model — implemented in staged PRs.
 2. **Product catalogue:** categories, SKUs, prices, filtering, pagination, and role-protected CRUD/archive endpoints — implemented in PR #11.
-3. **Inventory:** branch stock balances, movement ledger, adjustments, and stock integrity.
+3. **Inventory:** branch stock balances, append-only movement ledger, transactional receipts/adjustments, and non-negative stock integrity — implemented in PR #12.
 4. **Purchasing:** suppliers, purchase orders, goods receipt, partial receipts, and supplier balances.
 5. **POS and financial integrity:** transactional checkout, server-side totals, stock checks, idempotency, sale history, returns/refunds, and payment records.
 6. **Reporting and integration:** dashboard/report endpoints, API documentation, frontend API client integration, tests, and deployment instructions.
