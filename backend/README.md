@@ -1,6 +1,6 @@
 # AutoParts Pro API
 
-Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, health checks, OpenAPI docs, role permissions, and branch-scoped access primitives. The product catalogue and branch-scoped inventory APIs are implemented in staged PRs; purchasing, sales, and payment modules remain future stages.
+Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, health checks, OpenAPI docs, role permissions, and branch-scoped access primitives. The product catalogue, branch-scoped inventory, supplier, and purchase-order APIs are implemented in staged PRs; sales and payment modules remain future stages.
 
 ## Requirements
 
@@ -94,6 +94,24 @@ All inventory endpoints require authentication. Any active staff member can read
 Owners/superusers must include a valid active `branch` ID in write requests. Other staff are automatically scoped to their assigned active branch; attempts to select another branch are rejected. Stock-changing operations use a database transaction and lock the product row, update the current balance, and append an audit movement atomically. Stock cannot fall below zero. Movement rows are read-only through the API and Django admin.
 
 The `sale` and `return` movement types are reserved for the future checkout/returns workflow; this inventory API does not yet implement sales or payment processing.
+
+### Suppliers and purchasing
+
+Supplier records are shared across branches. Supplier list/create/update/archive endpoints require authentication; only owners, managers, and inventory staff may mutate supplier records. Deleting a supplier archives it to preserve purchase history.
+
+- `GET /api/v1/suppliers/` — list active suppliers; supports `search` and `is_active=true|false`.
+- `POST /api/v1/suppliers/` — create a supplier.
+- `GET/PATCH/DELETE /api/v1/suppliers/{id}/` — retrieve, update, or archive a supplier.
+- `GET /api/v1/purchase-orders/` — list purchase orders visible to the user's branch; owners can see all branches.
+- `POST /api/v1/purchase-orders/` — create a draft order with a supplier, branch, order number, and item lines.
+- `GET/PATCH /api/v1/purchase-orders/{id}/` — view or edit a draft purchase order.
+- `POST /api/v1/purchase-orders/{id}/order/` — place a draft order.
+- `POST /api/v1/purchase-orders/{id}/receive/` — receive all or part of one or more order lines.
+- `POST /api/v1/purchase-orders/{id}/cancel/` — cancel an eligible order before any items have been received.
+
+Create a purchase order with `order_number`, `supplier` (ID), `branch` (ID), and `items` such as `[{"product": 1, "quantity_ordered": 20, "unit_cost": "850.00"}]`. Non-owner staff can only use their assigned branch. Draft orders must be explicitly placed before receiving goods.
+
+For a partial receipt, send `{"items": [{"item_id": 1, "quantity": 8}]}` to the receive action. Each receipt atomically increments the matching branch's stock, increments the purchase line's received quantity, and creates a stock movement referencing the purchase order number. Over-receipt is rejected; the order becomes partially received or received based on outstanding line quantities. This records goods received and the stock cost snapshot, but does not yet record supplier invoices, accounts payable, or supplier payments.
 
 ## Roles and branches
 
