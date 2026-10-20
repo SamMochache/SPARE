@@ -1,6 +1,6 @@
 # AutoParts Pro API
 
-Django REST Framework backend for AutoParts Pro. This is the initial foundation: settings, a custom user model, JWT token endpoints, API schema/docs, and a health endpoint. Catalog, inventory, purchasing, sales, and payment modules will be implemented in later stages.
+Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, a health endpoint, OpenAPI docs, and basic role-based access-control primitives. Catalog, inventory, purchasing, sales, and payment modules will be implemented in later stages.
 
 ## Requirements
 
@@ -17,7 +17,8 @@ cd backend
 python -m venv .venv
 # Linux/macOS:
 source .venv/bin/activate
-# Windows PowerShell: .venv\\Scripts\\Activate.ps1
+# Windows PowerShell:
+.venv\\Scripts\\Activate.ps1
 pip install -r requirements.txt
 cp .env.example .env
 ```
@@ -39,12 +40,27 @@ The custom `accounts.User` model must be present before the first migration. Do 
 
 - `GET /api/v1/health/` — public health check.
 - `POST /api/v1/auth/token/` — obtain JWT access and refresh tokens with Django username/password.
-- `POST /api/v1/auth/token/refresh/` — refresh access token.
+- `POST /api/v1/auth/token/refresh/` — refresh an access token.
+- `POST /api/v1/auth/logout/` — blacklist a refresh token to revoke further refreshes.
+- `GET/PATCH /api/v1/auth/me/` — view or update the authenticated user's own first name, last name, and email. Username and role are read-only.
 - `GET /api/schema/` — OpenAPI schema.
 - `GET /api/docs/` — Swagger UI.
-- `/admin/` — Django admin.
+- `/admin/` — Django admin for authorized administrators.
 
-All other DRF endpoints require authentication by default. Role-based object-level permissions are not yet implemented; do not expose this API publicly for production use until access control and deployment hardening are complete.
+The logout endpoint expects the refresh token in the request body as `{"refresh": "<refresh-token>"}`. Token blacklist support is enabled in Django settings. Clients should also discard their local access token on logout; already-issued access tokens remain valid until their short expiry.
+
+## Roles and permissions
+
+Users have one of five roles: `owner`, `manager`, `cashier`, `inventory`, or `accountant`. Create and assign staff accounts through Django admin; public self-registration is intentionally not exposed.
+
+Reusable DRF permission classes are available in `apps.accounts.permissions`:
+
+- `OwnerOrManager` — owner or manager.
+- `InventoryStaff` — owner, manager, or inventory.
+- `SalesStaff` — owner, manager, or cashier.
+- `FinanceStaff` — owner, manager, or accountant.
+
+These classes are building blocks for the upcoming domain APIs. Apply the appropriate permission class to each view; authentication alone is not sufficient to protect sensitive operations. Branch-level access restrictions will be added when the branch model is introduced.
 
 ## Checks
 
