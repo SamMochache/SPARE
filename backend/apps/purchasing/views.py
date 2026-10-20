@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -159,7 +160,7 @@ class PurchaseOrderViewSet(BranchScopeMixin, viewsets.ModelViewSet):
                 )
 
             lines_qs = order.items.all()
-            all_received = not lines_qs.filter(quantity_received__lt=__import__("django.db.models", fromlist=["F"]).F("quantity_ordered")).exists()
+            all_received = not lines_qs.filter(quantity_received__lt=F("quantity_ordered")).exists()
             any_received = lines_qs.filter(quantity_received__gt=0).exists()
             if all_received:
                 order.status = PurchaseOrder.Status.RECEIVED
