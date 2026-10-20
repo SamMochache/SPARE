@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .permissions import FinanceStaff, InventoryStaff, OwnerOrManager, SalesStaff
 
@@ -41,6 +42,32 @@ class CurrentUserEndpointTests(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.role, User.Role.CASHIER)
         self.assertEqual(self.user.first_name, "Updated")
+
+
+class LogoutEndpointTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="logout-user",
+            password="Strong-Test-Pass-2026!",
+            role=User.Role.CASHIER,
+        )
+
+    def test_logout_blacklists_refresh_token(self):
+        refresh = RefreshToken.for_user(self.user)
+        refresh_value = str(refresh)
+        response = APIClient().post(
+            "/api/v1/auth/logout/",
+            {"refresh": refresh_value},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        reuse_response = APIClient().post(
+            "/api/v1/auth/token/refresh/",
+            {"refresh": refresh_value},
+            format="json",
+        )
+        self.assertEqual(reuse_response.status_code, 401)
 
 
 class RolePermissionTests(TestCase):
