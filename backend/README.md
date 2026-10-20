@@ -1,6 +1,6 @@
 # AutoParts Pro API
 
-Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, a health endpoint, OpenAPI docs, and basic role-based access-control primitives. Catalog, inventory, purchasing, sales, and payment modules will be implemented in later stages.
+Django REST Framework backend for AutoParts Pro. The foundation includes environment-based settings, a custom user model, JWT authentication, a health endpoint, OpenAPI docs, role permissions, and branch-scoped access primitives. Catalog, inventory, purchasing, sales, and payment modules will be implemented in later stages.
 
 ## Requirements
 
@@ -25,7 +25,7 @@ cp .env.example .env
 
 Set `DJANGO_SECRET_KEY` to a long random value. Set `DATABASE_URL` to the Neon connection string (include SSL settings as provided by Neon). If `DATABASE_URL` is omitted, settings fall back to local SQLite for a quick smoke test only.
 
-Run the initial migration and create an administrator:
+Generate database migrations after pulling model changes, then migrate and create an administrator:
 
 ```bash
 python manage.py makemigrations accounts
@@ -34,7 +34,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-The custom `accounts.User` model must be present before the first migration. Do not change `AUTH_USER_MODEL` after production data exists without a planned migration.
+The custom `accounts.User` model must be present before the first migration. If you already created and applied an initial migration in a local or hosted database, do not regenerate or replace it; create a new migration and review the plan before applying it.
 
 ## Endpoints
 
@@ -49,18 +49,18 @@ The custom `accounts.User` model must be present before the first migration. Do 
 
 The logout endpoint expects the refresh token in the request body as `{"refresh": "<refresh-token>"}`. Token blacklist support is enabled in Django settings. Clients should also discard their local access token on logout; already-issued access tokens remain valid until their short expiry.
 
-## Roles and permissions
+## Roles, branches, and permissions
 
-Users have one of five roles: `owner`, `manager`, `cashier`, `inventory`, or `accountant`. Create and assign staff accounts through Django admin; public self-registration is intentionally not exposed.
+Users have one of five roles: `owner`, `manager`, `cashier`, `inventory`, or `accountant`. Branch records and staff assignments can be managed through Django admin. Public self-registration is intentionally not exposed.
 
-Reusable DRF permission classes are available in `apps.accounts.permissions`:
+- Owners and Django superusers can access records across branches.
+- Non-owner staff are restricted to the branch assigned to their account.
+- Unassigned non-owner staff receive no branch records and cannot create branch-owned records.
+- `BranchScopedQuerysetMixin` filters list/queryset results for views whose model has a `branch` foreign key.
+- `BranchObjectPermission` protects object-level access. Use it on detail/update/delete views as well as the queryset mixin.
+- `OwnerOrManager`, `InventoryStaff`, `SalesStaff`, and `FinanceStaff` provide role gates for domain operations.
 
-- `OwnerOrManager` — owner or manager.
-- `InventoryStaff` — owner, manager, or inventory.
-- `SalesStaff` — owner, manager, or cashier.
-- `FinanceStaff` — owner, manager, or accountant.
-
-These classes are building blocks for the upcoming domain APIs. Apply the appropriate permission class to each view; authentication alone is not sufficient to protect sensitive operations. Branch-level access restrictions will be added when the branch model is introduced.
+These are reusable security building blocks; they only protect a domain endpoint when that endpoint explicitly applies the appropriate permission/mixin. Branch-level access has not yet been wired into catalogue, inventory, purchasing, or sales endpoints because those modules are not implemented yet.
 
 ## Checks
 
