@@ -24,8 +24,13 @@ def resolve_branch(user, requested_id=None):
         return get_object_or_404(Branch, pk=requested_id, is_active=True)
     if not user.branch_id or not user.branch.is_active:
         raise PermissionDenied("Your account must be assigned to an active branch.")
-    if requested_id and int(requested_id) != user.branch_id:
-        raise PermissionDenied("You cannot transact at another branch.")
+    if requested_id:
+        try:
+            requested_id = int(requested_id)
+        except (TypeError, ValueError):
+            raise ValidationError({"branch": "Enter a valid branch ID."})
+        if requested_id != user.branch_id:
+            raise PermissionDenied("You cannot transact at another branch.")
     return user.branch
 
 
@@ -134,13 +139,13 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=("post",), url_path="returns")
     def create_return(self, request, pk=None):
-        sale = get_object_or_404(scope_sales(Sale.objects.select_for_update(), request.user), pk=pk)
+        sale = get_object_or_404(scope_sales(Sale.objects.all(), request.user), pk=pk)
         serializer = ReturnSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
         try:
             with transaction.atomic():
-                sale = Sale.objects.select_for_update().get(pk=sale.pk)
+                sale = get_object_or_404(scope_sales(Sale.objects.select_for_update(), request.user), pk=pk)
                 if sale.status == Sale.Status.REFUNDED:
                     raise ValidationError({"sale": "This sale has already been fully refunded."})
                 lines_by_id = {line.pk: line for line in SaleItem.objects.filter(sale=sale)}
