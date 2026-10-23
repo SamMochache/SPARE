@@ -12,6 +12,7 @@ import { ModulePlaceholder } from "./pages/ModulePlaceholder";
 import { PointOfSale } from "./pages/PointOfSale";
 import { Products } from "./pages/Products";
 import { Purchasing } from "./pages/Purchasing";
+import { SalesHistory } from "./pages/SalesHistory";
 
 function RequireAuth() {
   const { user, loading } = useAuth();
@@ -36,7 +37,8 @@ export function App() {
             <Route path="products" element={<Products />} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="purchases" element={<Purchasing />} />
-            {navItems.filter((item) => !item.ready && item.path !== "/inventory" && item.path !== "/purchases").map((item) => (
+            <Route path="sales" element={<SalesHistory />} />
+            {navItems.filter((item) => !item.ready && item.path !== "/inventory" && item.path !== "/purchases" && item.path !== "/sales").map((item) => (
               <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />
             ))}
             <Route path="*" element={<Navigate to="/" replace />} />
