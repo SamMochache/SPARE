@@ -19,14 +19,13 @@ function RequireAuth() {
     return <div className="min-h-screen grid place-items-center bg-canvas text-sm text-ink-muted">Loading your workspace…</div>;
   }
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
-  return <ApplicationLayout />;
+  return <AppDataProvider><ApplicationLayout /></AppDataProvider>;
 }
 
 export function App() {
   return (
     <AuthProvider>
-      <AppDataProvider>
-        <BrowserRouter>
+      <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route element={<RequireAuth />}>
@@ -39,9 +38,8 @@ export function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
-        </BrowserRouter>
-        <Toaster position="top-right" closeButton richColors toastOptions={{ style: { fontFamily: "Inter, system-ui, sans-serif" } }} />
-      </AppDataProvider>
+      </BrowserRouter>
+      <Toaster position="top-right" closeButton richColors toastOptions={{ style: { fontFamily: "Inter, system-ui, sans-serif" } }} />
     </AuthProvider>
   );
 }
