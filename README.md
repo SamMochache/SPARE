@@ -2,7 +2,7 @@
 
 AutoParts Pro is an automotive parts shop management application. The repository contains a React, TypeScript, and Vite frontend and a Django REST API backend under active staged development.
 
-> **Integration status:** JWT authentication, product catalogue, branch-scoped inventory, purchasing (suppliers, purchase orders, and goods receipts), and sales history/returns are connected to Django. dashboard reporting and customer records still contain prototype behavior. POS checkout now records sales through Django; payment-provider verification and split/credit checkout are not connected. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
+> **Integration status:** JWT authentication, product catalogue, branch-scoped inventory, purchasing (suppliers, purchase orders, and goods receipts), sales history/returns, POS checkout, and dashboard reporting are connected to Django. Customer records still contain prototype behavior. Payment-provider verification and split/credit checkout are not connected. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
 
 ## Repository layout
 
@@ -28,6 +28,17 @@ Other commands, run from `frontend/`:
 | `npm run lint` | Run ESLint. |
 
 The frontend uses `VITE_API_BASE_URL` in `frontend/.env.local` to point to Django (default: `http://localhost:8000`). Sign in with a backend user created by an administrator. Product catalogue data and inventory stock balances are loaded from the API. Product fields not represented by the backend schema (such as VAT rate, image, reorder level, and some fitment fields) are not yet first-class persisted fields.
+
+## Live dashboard and reporting
+
+The dashboard now reads the Django reporting endpoints for the selected date range and shows API-backed net sales, sales trend, inventory valuation, low-stock positions, top-selling products, and recent sales. Date filters are sent to the backend. Reporting permissions and branch scope are enforced server-side: owners/superusers may query all branches or a selected active branch, while other users are restricted to their assigned branch.
+
+- `GET /api/v1/reports/dashboard/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
+- `GET /api/v1/reports/sales/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
+- `GET /api/v1/reports/inventory/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
+- `GET /api/v1/reports/top-products/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
+
+Revenue uses recorded sales and recorded refunds; it is not payment settlement verification. Inventory valuation uses current catalogue cost prices rather than historical purchase cost. Top-product sales values are line totals before sale-level discounts and do not represent profit.
 
 ## Purchasing screen
 
@@ -83,6 +94,6 @@ See [backend/README.md](backend/README.md) for setup, API endpoints, permissions
 4. **Purchasing:** supplier management, draft/order/cancel workflows, partial goods receipt, and stock-ledger integration. Supplier invoicing and accounts payable remain future work.
 5. **POS and financial integrity:** transactional checkout, server-side prices/totals, stock checks, idempotency, sale history, return/refund audit records. Payment-provider verification, payment references, split payments, customer credit accounting, VAT/tax persistence, and settlement remain future work.
 6. **Reporting:** dashboard KPIs, daily sales, inventory valuation/low-stock, and top-product reports.
-7. **Remaining frontend integrations:** dashboard, customer records, and reports.
+7. **Remaining frontend integrations:** customer records and full end-to-end validation.
 
 Each stage should be implemented on a focused feature branch and reviewed before merging. No CI/CD workflows are part of this implementation plan.
