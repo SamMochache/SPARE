@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { fetchCatalogue, createCatalogueProduct, updateCatalogueProduct } from '../api/catalogue';
 import { customers as seedCustomers } from '../data/customers';
 import { products as seedProducts } from '../data/products';
@@ -59,7 +59,7 @@ export function AppDataProvider({ children }: {children: React.ReactNode;}) {
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState('');
 
-  const refreshProducts = async () => {
+  const refreshProducts = useCallback(async () => {
     setProductsLoading(true);
     setProductsError('');
     try {
@@ -72,7 +72,7 @@ export function AppDataProvider({ children }: {children: React.ReactNode;}) {
     } finally {
       setProductsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -142,7 +142,7 @@ export function AppDataProvider({ children }: {children: React.ReactNode;}) {
       removeHeldSale: (id) => setState((s) => ({ ...s, heldSales: s.heldSales.filter((h) => h.id !== id) })),
       resetDemoData: () => setState((s) => ({ ...s, customers: seedCustomers, heldSales: [], sales: [] }))
     };
-  }, [state, productsLoading, productsError]);
+  }, [state, productsLoading, productsError, refreshProducts]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }
