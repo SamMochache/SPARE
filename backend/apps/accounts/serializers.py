@@ -8,8 +8,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     branch_id = serializers.IntegerField(read_only=True, allow_null=True)
     branch_name = serializers.CharField(source="branch.name", read_only=True, allow_null=True, default=None)
+    is_superuser = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
-        fields = ("id", "username", "first_name", "last_name", "email", "role", "branch_id", "branch_name")
-        read_only_fields = ("id", "username", "role", "branch_id", "branch_name")
+        fields = ("id", "username", "first_name", "last_name", "email", "role", "branch_id", "branch_name", "is_superuser")
+        read_only_fields = ("id", "username", "role", "branch_id", "branch_name", "is_superuser")
