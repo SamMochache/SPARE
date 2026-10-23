@@ -17,6 +17,7 @@ import { Reports } from "./pages/Reports";
 import { SalesHistory } from "./pages/SalesHistory";
 import { Settings } from "./pages/Settings";
 import { Suppliers } from "./pages/Suppliers";
+import { UserManagement } from "./pages/UserManagement";
 
 function RequireAuth() {
   const { user, loading } = useAuth();
@@ -40,7 +41,8 @@ export function App() {
       <Route path="settings" element={<Settings />} />
       <Route path="suppliers" element={<Suppliers />} />
       <Route path="reports" element={<Reports />} />
-      {navItems.filter((item) => !item.ready && !["/inventory", "/purchases", "/sales", "/settings", "/suppliers", "/reports"].includes(item.path)).map((item) => <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />)}
+      <Route path="users" element={<UserManagement />} />
+      {navItems.filter((item) => !item.ready && !["/inventory", "/purchases", "/sales", "/settings", "/suppliers", "/reports", "/users"].includes(item.path)).map((item) => <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />)}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Route>
   </Routes></BrowserRouter><Toaster position="top-right" closeButton richColors toastOptions={{ style: { fontFamily: "Inter, system-ui, sans-serif" } }} /></AuthProvider>;
