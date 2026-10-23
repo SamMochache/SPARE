@@ -1,23 +1,35 @@
-from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView
+from rest_framework import serializers
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.serializers import ModelSerializer
 
 from .models import Branch
+from .permissions import OwnerOrManager
 from .serializers import UserProfileSerializer
 
 
-class BranchSerializer(ModelSerializer):
+class BranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branch
-        fields = ("id", "code", "name", "address", "is_active")
-        read_only_fields = fields
+        fields = ("id", "code", "name", "address", "phone", "is_active", "created_at")
+        read_only_fields = ("id", "created_at")
+
+    def validate_code(self, value):
+        value = value.strip().lower()
+        if not value:
+            raise serializers.ValidationError("A branch code is required.")
+        return value
 
 
-class BranchListView(ListAPIView):
-    """Owners can select any active branch; staff see only their assigned branch."""
+class BranchListView(ListCreateAPIView):
+    """List active branches for authorized staff; owners/managers can create branches."""
 
     serializer_class = BranchSerializer
     permission_classes = (IsAuthenticated,)
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), OwnerOrManager()]
+        return super().get_permissions()
 
     def get_queryset(self):
         user = self.request.user
@@ -27,6 +39,9 @@ class BranchListView(ListAPIView):
         if not user.branch_id:
             return queryset.none()
         return queryset.filter(pk=user.branch_id)
+
+    def perform_create(self, serializer):
+        serializer.save(is_active=True)
 
 
 class CurrentUserView(RetrieveUpdateAPIView):
