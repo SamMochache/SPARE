@@ -10,6 +10,7 @@ export interface CurrentUser {
   role: "owner" | "manager" | "cashier" | "inventory" | "accountant" | string;
   branch_id: number | null;
   branch_name: string | null;
+  is_superuser: boolean;
 }
 
 interface AuthContextValue {
