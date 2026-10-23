@@ -57,7 +57,7 @@ export function ReceiptPreview({ sale }: ReceiptPreviewProps) {
       <div className="space-y-0.5">
         {row('Subtotal', formatKES(sale.totals.subtotal))}
         {sale.totals.discount > 0 && row(`Discount${sale.discount ? ` (${sale.discount.reason})` : ''}`, `−${formatKES(sale.totals.discount)}`)}
-        {row('VAT 16%', formatKES(sale.totals.tax))}
+        {sale.totals.tax > 0 && row('Tax', formatKES(sale.totals.tax))}
         <div className="pt-1.5">{row('TOTAL', formatKES(sale.totals.total), true)}</div>
       </div>
       {rule}
@@ -78,8 +78,8 @@ export function ReceiptPreview({ sale }: ReceiptPreviewProps) {
       {rule}
       <footer className="text-center text-xs text-ink-muted space-y-0.5">
         <p>Thank you for shopping with us. Goods once sold are returnable within 7 days with this receipt.</p>
-        <p className="font-semibold text-ink pt-1">DEMONSTRATION RECEIPT</p>
-        <p>Not a fiscal (eTIMS) receipt · No payment was processed</p>
+        <p className="font-semibold text-ink pt-1">SALE RECORD · NOT A FISCAL (eTIMS) RECEIPT</p>
+        <p>Payment verification is external; M-Pesa integration is not connected.</p>
       </footer>
     </article>);
 

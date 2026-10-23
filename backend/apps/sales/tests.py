@@ -56,6 +56,28 @@ class SalesAPITests(TestCase):
         self.balance.refresh_from_db()
         self.assertEqual(self.balance.quantity_on_hand, 8)
 
+    def test_checkout_rejects_stale_expected_total(self):
+        response = self.client.post(
+            "/api/v1/sales/checkout/",
+            self.checkout_payload(expected_total="999.00", amount_paid="1000.00"),
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Sale.objects.count(), 0)
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.quantity_on_hand, 10)
+
+    def test_checkout_rejects_cash_underpayment(self):
+        response = self.client.post(
+            "/api/v1/sales/checkout/",
+            self.checkout_payload(expected_total="1000.00", amount_paid="900.00"),
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Sale.objects.count(), 0)
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.quantity_on_hand, 10)
+
     def test_discount_cannot_exceed_subtotal(self):
         response = self.client.post("/api/v1/sales/checkout/", self.checkout_payload(discount="1001"), format="json")
         self.assertEqual(response.status_code, 400)

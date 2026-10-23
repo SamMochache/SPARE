@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAppData } from '../../contexts/AppDataContext';
 import { WALK_IN_CUSTOMER_ID } from '../../data/customers';
-import { currentUser } from '../../data/shop';
+import { checkoutSale } from '../../api/sales';
 import type { Product } from '../../types/product';
 import type { CartLine, CompletedSale, Discount, HeldSale, PaymentRecord } from '../../types/sales';
 import { formatKES, roundMoney } from '../../utils/currency';
-import { computeTotals, generateReceiptNo } from '../../utils/sales';
+import { computeTotals } from '../../utils/sales';
 
 export interface CartItem {
   product: Product;
@@ -23,7 +23,7 @@ export interface CheckoutResult {
 const PROFILE_DISCOUNT = 'Customer profile';
 
 export function usePointOfSale() {
-  const { products, customers, heldSales, sales, branch, recordSale, holdSale, removeHeldSale, addCustomer } = useAppData();
+  const { products, customers, heldSales, refreshProducts, holdSale, removeHeldSale, addCustomer } = useAppData();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customerId, setCustomerId] = useState(WALK_IN_CUSTOMER_ID);
   const [discount, setDiscount] = useState<Discount | null>(null);
@@ -38,7 +38,7 @@ export function usePointOfSale() {
     }),
     [lines, productMap]
   );
-  const totals = useMemo(() => computeTotals(items.map((i) => ({ unitPrice: i.product.sellingPrice, quantity: i.quantity })), discount), [items, discount]);
+  const totals = useMemo(() => computeTotals(items.map((i) => ({ unitPrice: i.product.sellingPrice, quantity: i.quantity })), discount, 0), [items, discount]);
   const cartQuantities = useMemo(() => new Map(lines.map((l) => [l.productId, l.quantity])), [lines]);
   const customer = customers.find((c) => c.id === customerId) ?? customers[0];
 
@@ -126,30 +126,64 @@ export function usePointOfSale() {
     toast.success('Held sale resumed');
   }
 
-  function completeSale(result: CheckoutResult): CompletedSale {
-    const now = new Date();
-    const sale: CompletedSale = {
-      receiptNo: generateReceiptNo(now, 48 + sales.length),
-      createdAt: now.toISOString(),
-      cashier: currentUser.name,
-      branch: branch.name,
+  async function completeSale(result: CheckoutResult, branchId: number | null, checkoutKey: string): Promise<CompletedSale> {
+    if (!branchId) throw new Error("Select an active branch before checking out.");
+    const method = result.payments[0]?.method;
+    if (!method || result.payments.length !== 1) {
+      throw new Error("The live checkout API currently supports one recorded payment method per sale.");
+    }
+    const response = await checkoutSale({
+      branch: branchId,
+      sale_number: checkoutKey,
+      idempotency_key: checkoutKey,
+      payment_method: method,
+      customer_name: customer.id === WALK_IN_CUSTOMER_ID ? "" : customer.name,
+      customer_phone: customer.id === WALK_IN_CUSTOMER_ID ? "" : customer.phone,
+      discount: totals.discount.toFixed(2),
+      expected_total: totals.total.toFixed(2),
+      amount_paid: result.amountPaid.toFixed(2),
+      notes: note,
+      items: items.map((item) => ({ product: item.product.id, quantity: item.quantity }))
+    });
+    const serverSubtotal = Number(response.subtotal);
+    const serverDiscount = Number(response.discount);
+    const serverTotal = Number(response.total);
+    const completed: CompletedSale = {
+      receiptNo: response.sale_number,
+      createdAt: response.created_at,
+      cashier: response.cashier_username || "Signed-in cashier",
+      branch: response.branch_name,
       customer,
-      lines: items.map((i) => ({
-        productId: i.product.id,
-        name: i.product.name,
-        sku: i.product.sku,
-        quantity: i.quantity,
-        unitPrice: i.product.sellingPrice,
-        lineTotal: roundMoney(i.product.sellingPrice * i.quantity)
+      lines: response.items.map((line) => ({
+        productId: line.product,
+        name: line.name_snapshot,
+        sku: line.sku_snapshot,
+        quantity: line.quantity,
+        unitPrice: Number(line.unit_price),
+        lineTotal: Number(line.line_total)
       })),
       discount,
-      totals,
+      totals: {
+        itemCount: response.items.reduce((sum, line) => sum + line.quantity, 0),
+        subtotal: serverSubtotal,
+        discount: serverDiscount,
+        taxable: Math.max(0, serverSubtotal - serverDiscount),
+        tax: 0,
+        total: serverTotal
+      },
       ...result,
-      note
+      amountPaid: result.amountPaid,
+      change: Math.max(0, roundMoney(result.amountPaid - serverTotal)),
+      balanceDue: 0,
+      note: response.notes
     };
-    recordSale(sale);
     resetSale();
-    return sale;
+    try {
+      await refreshProducts();
+    } catch {
+      toast.warning("Sale recorded, but stock refresh failed", { description: "Refresh the product catalogue before starting another sale." });
+    }
+    return completed;
   }
 
   return {
