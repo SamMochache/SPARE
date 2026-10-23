@@ -46,4 +46,4 @@ class CustomerAccountEntry(models.Model):
 
     class Meta:
         ordering = ("created_at", "id")
-        indexes = [models.Index(fields=("customer", "created_at")), models.Index(fields=("customer", "entry_type"))]
+        indexes = [models.Index(fields=("customer", "created_at"), name="custacct_customer_date"), models.Index(fields=("customer", "entry_type"), name="custacct_customer_type")]
