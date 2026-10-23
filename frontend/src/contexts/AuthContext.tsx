@@ -58,20 +58,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     const refresh = tokenStore.getRefresh();
-    tokenStore.clear();
-    setUser(null);
     if (refresh) {
       try {
         await apiRequest("/api/v1/auth/logout/", {
           method: "POST",
-          authenticated: false,
-          retryAuth: false,
-          body: { refresh }
+          body: { refresh },
+          retryAuth: false
         });
       } catch {
         // Local logout remains effective if the server cannot be reached.
       }
     }
+    tokenStore.clear();
+    setUser(null);
   }, []);
 
   const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, login, logout]);
