@@ -44,7 +44,7 @@ The custom `accounts.User` model must be present before the first migration. If 
 - `POST /api/v1/auth/token/` — obtain JWT access and refresh tokens with Django username/password.
 - `POST /api/v1/auth/token/refresh/` — refresh an access token.
 - `POST /api/v1/auth/logout/` — blacklist a refresh token to revoke further refreshes.
-- `GET/PATCH /api/v1/auth/me/` — view/update the authenticated user's first name, last name, and email. Username and role are read-only.
+- `GET/PATCH /api/v1/auth/me/` — view/update the authenticated user's first name, last name, and email. Role, branch assignment, and superuser status are read-only.\n- `GET /api/v1/auth/branches/` — list active branches visible to the authenticated user (all active branches for owners/superusers; assigned branch only for other staff).
 - `GET /api/schema/` — OpenAPI schema.
 - `GET /api/docs/` — Swagger UI.
 - `/admin/` — Django admin for authorized administrators.
