@@ -23,6 +23,7 @@ class Sale(models.Model):
     cashier = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="sales")
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.COMPLETED, db_index=True)
     payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices)
+    customer = models.ForeignKey("customers.Customer", null=True, blank=True, on_delete=models.SET_NULL, related_name="sales")
     customer_name = models.CharField(max_length=180, blank=True)
     customer_phone = models.CharField(max_length=40, blank=True)
     subtotal = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
