@@ -5,6 +5,7 @@ import { ApplicationLayout } from "./components/layout/ApplicationLayout";
 import { AppDataProvider } from "./contexts/AppDataContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { navItems } from "./data/navigation";
+import { BranchManagement } from "./pages/BranchManagement";
 import { Dashboard } from "./pages/Dashboard";
 import { Customers } from "./pages/Customers";
 import { Inventory } from "./pages/Inventory";
@@ -39,10 +40,11 @@ export function App() {
       <Route path="sales" element={<SalesHistory />} />
       <Route path="customers" element={<Customers />} />
       <Route path="settings" element={<Settings />} />
+      <Route path="branches" element={<BranchManagement />} />
       <Route path="suppliers" element={<Suppliers />} />
       <Route path="reports" element={<Reports />} />
       <Route path="users" element={<UserManagement />} />
-      {navItems.filter((item) => !item.ready && !["/inventory", "/purchases", "/sales", "/settings", "/suppliers", "/reports", "/users"].includes(item.path)).map((item) => <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />)}
+      {navItems.filter((item) => !item.ready && !["/inventory", "/purchases", "/sales", "/settings", "/suppliers", "/reports", "/users", "/branches"].includes(item.path)).map((item) => <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />)}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Route>
   </Routes></BrowserRouter><Toaster position="top-right" closeButton richColors toastOptions={{ style: { fontFamily: "Inter, system-ui, sans-serif" } }} /></AuthProvider>;
