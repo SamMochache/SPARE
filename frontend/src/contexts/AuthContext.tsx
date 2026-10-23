@@ -8,6 +8,8 @@ export interface CurrentUser {
   last_name: string;
   email: string;
   role: "owner" | "manager" | "cashier" | "inventory" | "accountant" | string;
+  branch_id: number | null;
+  branch_name: string | null;
 }
 
 interface AuthContextValue {
