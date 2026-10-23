@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BanknoteIcon, CreditCardIcon, DownloadIcon, InfoIcon, LandmarkIcon, PlusIcon, PrinterIcon, SmartphoneIcon, SplitIcon, BoxIcon } from "lucide-react";
+import { BanknoteIcon, CreditCardIcon, DownloadIcon, InfoIcon, LandmarkIcon, PlusIcon, PrinterIcon, SmartphoneIcon, BoxIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Customer } from "../../types/customer";
 import { CheckoutMethod, CompletedSale, SaleTotals } from "../../types/sales";
@@ -12,7 +12,6 @@ import { inputClass } from "../ui/formStyles";
 import { Modal } from "../ui/Modal";
 import { MpesaPanel } from "./MpesaPanel";
 import { ReceiptPreview } from "./ReceiptPreview";
-import { SplitPaymentPanel } from "./SplitPaymentPanel";
 import { useCheckout } from "./useCheckout";
 import { CheckoutResult } from "./usePointOfSale";
 interface CheckoutModalProps {
@@ -20,10 +19,11 @@ interface CheckoutModalProps {
   onClose: () => void;
   totals: SaleTotals;
   customer: Customer;
-  onComplete: (result: CheckoutResult) => CompletedSale;
+  branchId: number | null;
+  onComplete: (result: CheckoutResult, branchId: number | null, checkoutKey: string) => Promise<CompletedSale>;
 }
 const methods: {
-  id: CheckoutMethod;
+  id: Exclude<CheckoutMethod, "split">;
   label: string;
   icon: BoxIcon;
 }[] = [{
@@ -42,16 +42,13 @@ const methods: {
   id: 'bank',
   label: 'Bank',
   icon: LandmarkIcon
-}, {
-  id: 'split',
-  label: 'Split',
-  icon: SplitIcon
 }];
 export function CheckoutModal({
   open,
   onClose,
   totals,
   customer,
+  branchId,
   onComplete
 }: CheckoutModalProps) {
   const checkout = useCheckout(open, totals.total, customer);
@@ -61,28 +58,39 @@ export function CheckoutModal({
   } = checkout;
   const [processing, setProcessing] = useState(false);
   const [sale, setSale] = useState<CompletedSale | null>(null);
+  const [checkoutKey, setCheckoutKey] = useState("");
   useEffect(() => {
     if (open) {
       setSale(null);
       setProcessing(false);
+      setCheckoutKey(`POS-${Date.now().toString(36).toUpperCase()}`);
     }
   }, [open]);
-  function confirm() {
-    if (!evaluation.valid) return;
+  async function confirm() {
+    if (!evaluation.valid || processing) return;
+    if (!branchId) {
+      toast.error("Select an active branch before checking out.");
+      return;
+    }
     setProcessing(true);
-    window.setTimeout(() => {
-      const completed = onComplete({
+    try {
+      const completed = await onComplete({
         payments: evaluation.payments,
         amountPaid: evaluation.amountPaid,
         change: evaluation.change,
         balanceDue: evaluation.balanceDue
-      });
+      }, branchId, checkoutKey);
       setSale(completed);
-      setProcessing(false);
-      toast.success('Sale recorded in the prototype', {
-        description: 'Stock updated locally. No real payment was processed.'
+      toast.success("Sale recorded", {
+        description: `Receipt ${completed.receiptNo} saved by Django. Payment-provider verification is not connected.`
       });
-    }, 450);
+    } catch (cause) {
+      toast.error("Checkout failed", {
+        description: cause instanceof Error ? cause.message : "The sale was not confirmed. Check the API and try again."
+      });
+    } finally {
+      setProcessing(false);
+    }
   }
   const footer = sale ? <>
       <Button icon={PrinterIcon} onClick={() => {
@@ -104,7 +112,7 @@ export function CheckoutModal({
         Confirm payment · {formatKES(totals.total)}
       </Button>
     </>;
-  return <Modal open={open} onClose={onClose} dismissible={!processing} size="lg" title={sale ? 'Sale complete' : 'Checkout'} description={sale ? `Receipt ${sale.receiptNo} · demonstration only` : `${totals.itemCount} items · ${customer.name}`} footer={footer}>
+  return <Modal open={open} onClose={onClose} dismissible={!processing} size="lg" title={sale ? 'Sale complete' : 'Checkout'} description={sale ? `Receipt ${sale.receiptNo} · recorded in Django` : `${totals.itemCount} items · ${customer.name}`} footer={footer}>
       {sale ? <div className="bg-canvas -mx-5 -my-5 px-5 py-6">
           {sale.change > 0 && <p className="text-center text-sm text-ink-muted mb-4">
               Give change: <span className="text-lg font-semibold text-success tabular-nums">{formatKES(sale.change)}</span>
@@ -119,7 +127,7 @@ export function CheckoutModal({
             <dl className="text-xs text-ink-muted space-y-0.5 text-right tabular-nums">
               <div>Subtotal {formatKES(totals.subtotal)}</div>
               {totals.discount > 0 && <div className="text-success">Discount −{formatKES(totals.discount)}</div>}
-              <div>VAT 16% {formatKES(totals.tax)}</div>
+              <div>{totals.tax > 0 && <>Tax {formatKES(totals.tax)}</>}</div>
             </dl>
           </div>
 
@@ -161,17 +169,9 @@ export function CheckoutModal({
               <input id="bank-ref" autoFocus value={checkout.bankRef} onChange={(e) => checkout.setBankRef(e.target.value.toUpperCase())} placeholder="e.g. FT26292XK8Q1" className={`${inputClass} font-mono`} />
             </FormField>}
 
-          {method === 'split' && <SplitPaymentPanel rows={checkout.splitRows} onChange={checkout.setSplitRows} total={totals.total} />}
+          <p className="text-xs text-ink-muted">Checkout records one payment method in the API. Split payments and customer credit are not enabled for live checkout yet.</p>
 
-          {checkout.creditEligible && (method === 'cash' || method === 'split') && <label className="flex items-start gap-3 rounded-lg border border-line p-3 cursor-pointer hover:bg-canvas/60">
-              <input type="checkbox" checked={checkout.allowCredit} onChange={(e) => checkout.setAllowCredit(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#F97316]" />
-              <span className="text-[13px]">
-                <span className="font-medium text-ink block">Allow part-payment on account</span>
-                <span className="text-ink-muted">
-                  Unpaid amount is added to {customer.name}'s balance. Available credit: {formatKES(checkout.availableCredit)}.
-                </span>
-              </span>
-            </label>}
+
 
           <div className="min-h-[24px]" aria-live="polite">
             {!evaluation.valid ? <p className="text-[13px] text-ink-muted flex items-center gap-2">
