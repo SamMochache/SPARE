@@ -76,3 +76,44 @@ class CustomerAccountLedgerApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(CustomerAccountEntry.objects.filter(customer=self.customer).count(), 1)
+
+
+    def test_payment_idempotency_key_prevents_duplicate_ledger_entries(self):
+        payload = {"amount": "30.00", "reference": "PAY-IDEMPOTENT", "idempotency_key": "customer-payment-001"}
+        first = self.client.post(
+            f"/api/v1/customers/{self.customer.pk}/payments/",
+            payload,
+            format="json",
+        )
+        second = self.client.post(
+            f"/api/v1/customers/{self.customer.pk}/payments/",
+            payload,
+            format="json",
+        )
+        self.assertEqual(first.status_code, 201, first.data)
+        self.assertEqual(second.status_code, 200, second.data)
+        self.assertEqual(first.data["entry"]["id"], second.data["entry"]["id"])
+        self.assertEqual(CustomerAccountEntry.objects.filter(
+            customer=self.customer,
+            entry_type=CustomerAccountEntry.EntryType.PAYMENT,
+        ).count(), 1)
+        self.assertEqual(second.data["balance"], "70.00")
+
+    def test_payment_idempotency_key_cannot_be_reused_for_different_amount(self):
+        payload = {"amount": "30.00", "idempotency_key": "customer-payment-002"}
+        first = self.client.post(
+            f"/api/v1/customers/{self.customer.pk}/payments/",
+            payload,
+            format="json",
+        )
+        changed = self.client.post(
+            f"/api/v1/customers/{self.customer.pk}/payments/",
+            {"amount": "40.00", "idempotency_key": "customer-payment-002"},
+            format="json",
+        )
+        self.assertEqual(first.status_code, 201, first.data)
+        self.assertEqual(changed.status_code, 400, changed.data)
+        self.assertEqual(CustomerAccountEntry.objects.filter(
+            customer=self.customer,
+            entry_type=CustomerAccountEntry.EntryType.PAYMENT,
+        ).count(), 1)
