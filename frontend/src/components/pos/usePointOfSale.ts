@@ -31,7 +31,7 @@ function toCustomer(record: CustomerRecord): Customer {
 }
 
 export function usePointOfSale() {
-  const { products, customers: prototypeCustomers, heldSales, refreshProducts, holdSale, removeHeldSale } = useAppData();
+  const { products, heldSales, refreshProducts, holdSale, removeHeldSale } = useAppData();
   const [knownCustomers, setKnownCustomers] = useState<Customer[]>([]);
   const [pickerCustomers, setPickerCustomers] = useState<Customer[]>([WALK_IN_CUSTOMER]);
   const [lines, setLines] = useState<CartLine[]>([]);
