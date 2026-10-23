@@ -94,7 +94,7 @@ export function PointOfSale() {
           items={pos.items}
           totals={pos.totals}
           customer={pos.customer}
-          customers={pos.customers}
+          customers={pos.pickerCustomers}
           discount={pos.discount}
           note={pos.note}
           heldCount={pos.heldSales.length}
@@ -102,6 +102,7 @@ export function PointOfSale() {
           onRemove={pos.removeLine}
           onSelectCustomer={pos.selectCustomer}
           onCreateCustomer={pos.createCustomer}
+          onSearchCustomers={pos.searchCustomers}
           onOpenDiscount={() => setDiscountOpen(true)}
           onRemoveDiscount={() => pos.setDiscount(null)}
           onNoteChange={pos.setNote}

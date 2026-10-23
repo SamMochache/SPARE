@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckIcon, ChevronDownIcon, SearchIcon, UserIcon, UserPlusIcon } from 'lucide-react';
 import { WALK_IN_CUSTOMER_ID } from '../../data/customers';
@@ -14,16 +14,31 @@ interface CustomerPickerProps {
   customer: Customer;
   customers: Customer[];
   onSelect: (id: number) => void;
-  onCreate: (input: {name: string;phone: string;}) => void;
+  onCreate: (input: {name: string;phone: string;}) => Promise<void>;
+  onSearch: (query: string) => Promise<void>;
 }
 
-export function CustomerPicker({ customer, customers, onSelect, onCreate }: CustomerPickerProps) {
+export function CustomerPicker({ customer, customers, onSelect, onCreate, onSearch }: CustomerPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [errors, setErrors] = useState<{name?: string;phone?: string;}>({});
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState('');
+
+  useEffect(() => {
+    if (!open || creating) return;
+    let active = true;
+    setLoading(true);
+    setApiError('');
+    const timer = window.setTimeout(() => {
+      onSearch(query).catch((error) => { if (active) setApiError(error instanceof Error ? error.message : 'Could not search customers.'); }).finally(() => { if (active) setLoading(false); });
+    }, query ? 250 : 0);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [open, creating, query, onSearch]);
 
   function close() {
     setOpen(false);
@@ -45,10 +60,12 @@ export function CustomerPicker({ customer, customers, onSelect, onCreate }: Cust
     if (!normalized) next.phone = 'Use a Kenyan number, e.g. 0712 345 678';
     setErrors(next);
     if (next.name || next.phone || !normalized) return;
-    onCreate({ name: name.trim(), phone: formatKenyanPhone(normalized) });
-    setName('');
-    setPhone('');
-    close();
+    setSaving(true);
+    onCreate({ name: name.trim(), phone: formatKenyanPhone(normalized) }).then(() => {
+      setName('');
+      setPhone('');
+      close();
+    }).catch((error) => setErrors({ phone: error instanceof Error ? error.message : 'Could not create customer.' })).finally(() => setSaving(false));
   }
 
   return (
@@ -106,7 +123,7 @@ export function CustomerPicker({ customer, customers, onSelect, onCreate }: Cust
                   <Button size="sm" onClick={() => setCreating(false)}>
                     Back
                   </Button>
-                  <Button size="sm" variant="navy" type="submit">
+                  <Button size="sm" variant="navy" type="submit" loading={saving} disabled={saving}>
                     Add to sale
                   </Button>
                 </div>
@@ -115,10 +132,12 @@ export function CustomerPicker({ customer, customers, onSelect, onCreate }: Cust
           <>
                 <div className="p-2 border-b border-line relative">
                   <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" aria-hidden="true" />
-                  <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or phone" aria-label="Search customers" className={`${inputClass} pl-9 h-9`} />
+                  <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search live customer records" aria-label="Search customers" className={`${inputClass} pl-9 h-9`} />
                 </div>
                 <ul className="max-h-64 overflow-y-auto py-1">
-                  {filtered.length === 0 && <li className="px-4 py-4 text-[13px] text-ink-muted text-center">No customers match "{query}"</li>}
+                  {loading && <li className="px-4 py-3 text-[13px] text-ink-muted text-center">Searching live customer records…</li>}
+                  {apiError && <li role="alert" className="px-4 py-3 text-[13px] text-danger text-center">{apiError}</li>}
+                  {!loading && !apiError && filtered.length === 0 && <li className="px-4 py-4 text-[13px] text-ink-muted text-center">No customers match "{query}"</li>}
                   {filtered.map((c) =>
               <li key={c.id}>
                       <button
