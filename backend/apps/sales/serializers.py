@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from rest_framework import serializers
 from apps.accounts.models import Branch
 from apps.catalog.models import Product
@@ -34,10 +35,14 @@ class CheckoutSerializer(serializers.Serializer):
 
 class SaleItemSerializer(serializers.ModelSerializer):
     product = serializers.IntegerField(source="product_id", read_only=True)
+    quantity_returned = serializers.SerializerMethodField()
+
+    def get_quantity_returned(self, obj):
+        return obj.return_items.aggregate(quantity=Sum("quantity"))["quantity"] or 0
 
     class Meta:
         model = SaleItem
-        fields = ("id", "product", "sku_snapshot", "name_snapshot", "quantity", "unit_price", "line_total")
+        fields = ("id", "product", "sku_snapshot", "name_snapshot", "quantity", "quantity_returned", "unit_price", "line_total")
 
 
 class SaleSerializer(serializers.ModelSerializer):
