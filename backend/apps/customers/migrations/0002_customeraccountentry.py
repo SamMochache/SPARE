@@ -28,6 +28,6 @@ class Migration(migrations.Migration):
             ],
             options={"ordering": ("created_at", "id")},
         ),
-        migrations.AddIndex(model_name="customeraccountentry", index=models.Index(fields=["customer", "created_at"], name="customers_c_customer_9c2c16_idx")),
-        migrations.AddIndex(model_name="customeraccountentry", index=models.Index(fields=["customer", "entry_type"], name="customers_c_customer_5b8a9f_idx")),
+        migrations.AddIndex(model_name="customeraccountentry", index=models.Index(fields=["customer", "created_at"], name="custacct_customer_date")),
+        migrations.AddIndex(model_name="customeraccountentry", index=models.Index(fields=["customer", "entry_type"], name="custacct_customer_type")),
     ]
