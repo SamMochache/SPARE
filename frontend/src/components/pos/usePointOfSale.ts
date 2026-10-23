@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAppData } from '../../contexts/AppDataContext';
-import { WALK_IN_CUSTOMER_ID } from '../../data/customers';
+import { createCustomer as createCustomerApi, fetchCustomers } from '../../api/customers';
+import type { CustomerRecord } from '../../api/customers';
+import type { Customer } from '../../types/customer';
 import { checkoutSale } from '../../api/sales';
 import type { Product } from '../../types/product';
 import type { CartLine, CompletedSale, Discount, HeldSale, PaymentRecord } from '../../types/sales';
@@ -21,9 +23,17 @@ export interface CheckoutResult {
 }
 
 const PROFILE_DISCOUNT = 'Customer profile';
+const WALK_IN_CUSTOMER_ID = 0;
+const WALK_IN_CUSTOMER: Customer = { id: WALK_IN_CUSTOMER_ID, name: 'Walk-in Customer', phone: '', email: '', type: 'retail', kraPin: '', discountRate: 0, creditLimit: 0, balance: 0 };
+
+function toCustomer(record: CustomerRecord): Customer {
+  return { id: record.id, name: record.name, phone: record.phone ?? '', email: record.email ?? '', type: record.type, kraPin: record.kraPin ?? '', discountRate: Number(record.discountRate ?? 0), creditLimit: Number(record.creditLimit ?? 0), balance: 0 };
+}
 
 export function usePointOfSale() {
-  const { products, customers, heldSales, refreshProducts, holdSale, removeHeldSale, addCustomer } = useAppData();
+  const { products, customers: prototypeCustomers, heldSales, refreshProducts, holdSale, removeHeldSale } = useAppData();
+  const [knownCustomers, setKnownCustomers] = useState<Customer[]>([]);
+  const [pickerCustomers, setPickerCustomers] = useState<Customer[]>([WALK_IN_CUSTOMER]);
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customerId, setCustomerId] = useState(WALK_IN_CUSTOMER_ID);
   const [discount, setDiscount] = useState<Discount | null>(null);
@@ -40,7 +50,19 @@ export function usePointOfSale() {
   );
   const totals = useMemo(() => computeTotals(items.map((i) => ({ unitPrice: i.product.sellingPrice, quantity: i.quantity })), discount, 0), [items, discount]);
   const cartQuantities = useMemo(() => new Map(lines.map((l) => [l.productId, l.quantity])), [lines]);
-  const customer = customers.find((c) => c.id === customerId) ?? customers[0];
+  const customers = [WALK_IN_CUSTOMER, ...knownCustomers.filter((c) => c.id !== WALK_IN_CUSTOMER_ID)];
+  const customer = customers.find((c) => c.id === customerId) ?? WALK_IN_CUSTOMER;
+
+  const searchCustomers = useCallback(async (query: string) => {
+    const response = await fetchCustomers(query);
+    const results = response.results.map(toCustomer);
+    setPickerCustomers([WALK_IN_CUSTOMER, ...results]);
+    setKnownCustomers((current) => {
+      const byId = new Map(current.map((item) => [item.id, item]));
+      results.forEach((item) => byId.set(item.id, item));
+      return [...byId.values()];
+    });
+  }, []);
 
   function addToCart(product: Product): boolean {
     if (product.status === 'discontinued') {
@@ -87,11 +109,14 @@ export function usePointOfSale() {
     }
   }
 
-  function createCustomer(input: {name: string;phone: string;}) {
-    const created = addCustomer({ name: input.name, phone: input.phone, email: '', type: 'retail', kraPin: '', discountRate: 0, creditLimit: 0, balance: 0 });
+  async function createCustomer(input: {name: string;phone: string;}) {
+    const record = await createCustomerApi({ name: input.name, phone: input.phone, type: 'retail', discountRate: '0', creditLimit: '0' });
+    const created = toCustomer(record);
+    setKnownCustomers((current) => [...current.filter((item) => item.id !== created.id), created]);
+    setPickerCustomers((current) => [WALK_IN_CUSTOMER, created, ...current.filter((item) => item.id !== WALK_IN_CUSTOMER_ID && item.id !== created.id)]);
     setCustomerId(created.id);
     setDiscount((prev) => prev?.authorizedBy === PROFILE_DISCOUNT ? null : prev);
-    toast.success('Customer added to this sale', { description: `${created.name} · saved in this browser only` });
+    toast.success('Customer created', { description: `${created.name} · saved to the customer API` });
   }
 
   function hold(silent = false) {
@@ -188,8 +213,9 @@ export function usePointOfSale() {
 
   return {
     products,
-    customers,
+    customers: pickerCustomers,
     heldSales,
+    searchCustomers,
     items,
     totals,
     customer,
