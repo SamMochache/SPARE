@@ -11,6 +11,7 @@ from rest_framework.response import Response
 
 from apps.accounts.models import Branch
 from apps.catalog.models import Product
+from apps.customers.models import Customer
 from apps.inventory.models import StockBalance, StockMovement
 from .models import Sale, SaleItem, SaleReturn, SaleReturnItem
 from .permissions import SalesPermission
@@ -61,6 +62,8 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(created_at__date__gte=params["from"])
         if params.get("to"):
             qs = qs.filter(created_at__date__lte=params["to"])
+        if params.get("customer"):
+            qs = qs.filter(customer_id=params["customer"])
         return qs
 
     @action(detail=False, methods=("post",), url_path="checkout")
@@ -120,10 +123,17 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
                         raise ValidationError({"amount_paid": "Amount received is less than the server-calculated sale total."})
                     if values["payment_method"] != Sale.PaymentMethod.CASH and amount_paid != total:
                         raise ValidationError({"amount_paid": "For non-cash methods, the recorded amount must equal the sale total."})
+                customer = None
+                if values.get("customer") is not None:
+                    customer = Customer.objects.filter(pk=values["customer"], is_active=True).first()
+                    if customer is None:
+                        raise ValidationError({"customer": "Select an active customer record."})
                 sale = Sale.objects.create(
                     sale_number=values["sale_number"], idempotency_key=key or None,
                     branch=branch, cashier=request.user, payment_method=values["payment_method"],
-                    customer_name=values.get("customer_name", ""), customer_phone=values.get("customer_phone", ""),
+                    customer=customer,
+                    customer_name=customer.name if customer else values.get("customer_name", ""),
+                    customer_phone=customer.phone if customer else values.get("customer_phone", ""),
                     subtotal=subtotal, discount=discount, total=total, notes=values.get("notes", ""),
                 )
                 for product, balance, quantity, price, line_total in lines:
