@@ -58,7 +58,7 @@ export const navItems: NavItem[] = [
   planned: ['Revenue, COGS, discounts and gross margin', 'Sales by cashier and payment method', 'CSV and PDF export']
 },
 {
-  label: 'User Management', path: '/users', icon: ShieldCheckIcon, ready: false,
+  label: 'User Management', path: '/users', icon: ShieldCheckIcon, ready: true,
   description: 'Staff account management and permissions.',
   planned: ['Create/deactivate staff accounts', 'Role assignment', 'Last-login activity']
 },
