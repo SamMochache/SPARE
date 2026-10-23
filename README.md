@@ -81,7 +81,7 @@ See [backend/README.md](backend/README.md) for setup, API endpoints, permissions
 2. **Product catalogue:** categories, SKUs, prices, filtering, pagination, and role-protected CRUD/archive endpoints.
 3. **Inventory:** branch stock balances, append-only movement ledger, transactional receipts/adjustments, and live frontend integration.
 4. **Purchasing:** supplier management, draft/order/cancel workflows, partial goods receipt, and stock-ledger integration. Supplier invoicing and accounts payable remain future work.
-5. **POS and financial integrity:** transactional checkout, server-side prices/totals, stock checks, idempotency, sale history, return/refund audit records. Payment-provider verification, split payments, customer credit accounting, and settlement remain future work.
+5. **POS and financial integrity:** transactional checkout, server-side prices/totals, stock checks, idempotency, sale history, return/refund audit records. Payment-provider verification, payment references, split payments, customer credit accounting, VAT/tax persistence, and settlement remain future work.
 6. **Reporting:** dashboard KPIs, daily sales, inventory valuation/low-stock, and top-product reports.
 7. **Remaining frontend integrations:** dashboard, customer records, and reports.
 
