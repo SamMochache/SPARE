@@ -43,7 +43,7 @@ export const navItems: NavItem[] = [
   planned: ['POS customer picker integration', 'Credit sales and payment tracking', 'Purchase history and statements']
 },
 {
-  label: 'Suppliers', path: '/suppliers', icon: TruckIcon, ready: false,
+  label: 'Suppliers', path: '/suppliers', icon: TruckIcon, ready: true,
   description: 'Supplier contacts, categories and balances.',
   planned: ['Supplier directory with KRA PIN and contacts', 'Supplied categories', 'Outstanding supplier balances']
 },
@@ -53,7 +53,7 @@ export const navItems: NavItem[] = [
   planned: ['Supplier invoices and accounts payable']
 },
 {
-  label: 'Reports & Analytics', path: '/reports', icon: BarChart3Icon, ready: false, dividerBefore: true,
+  label: 'Reports & Analytics', path: '/reports', icon: BarChart3Icon, ready: true, dividerBefore: true,
   description: 'Sales, profit, stock and balance reports.',
   planned: ['Revenue, COGS, discounts and gross margin', 'Sales by cashier and payment method', 'CSV and PDF export']
 },
