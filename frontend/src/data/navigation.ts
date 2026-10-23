@@ -28,8 +28,8 @@ export const navItems: NavItem[] = [
 { label: 'Point of Sale', path: '/pos', icon: ShoppingCartIcon, ready: true, description: 'Counter sales and checkout.', planned: [] },
 { label: 'Products & Spare Parts', path: '/products', icon: PackageIcon, ready: true, description: 'Catalog, pricing and compatibility.', planned: [] },
 {
-  label: 'Inventory Management', path: '/inventory', icon: WarehouseIcon, ready: false,
-  description: 'Stock levels, adjustments, transfers and movement history.',
+  label: 'Inventory Management', path: '/inventory', icon: WarehouseIcon, ready: true,
+  description: 'Branch stock levels, receipts, adjustments and movement history.',
   planned: ['Stock levels with low and out-of-stock filters', 'Stock adjustments with reasons and approval', 'Transfers between branches', 'Damaged and returned goods tracking', 'Full movement history and valuation', 'Reorder suggestions']
 },
 {
