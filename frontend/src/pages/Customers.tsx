@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArchiveIcon, SearchIcon, UserPlusIcon, UsersIcon } from "lucide-react";
-import { archiveCustomer, createCustomer, fetchCustomers, type CustomerInput, type CustomerRecord, type CustomerType } from "../api/customers";
+import { archiveCustomer, createCustomer, fetchCustomers, updateCustomer, type CustomerInput, type CustomerRecord, type CustomerType } from "../api/customers";
 import { buttonClass } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import { inputClass } from "../components/ui/formStyles";
@@ -53,7 +53,7 @@ export function Customers() {
     event.preventDefault();
     setSaving(true);
     try {
-      if (editingId !== null) await (await import("../api/customers")).updateCustomer(editingId, form);
+      if (editingId !== null) await updateCustomer(editingId, form);
       else await createCustomer(form);
       toast.success(editingId !== null ? "Customer updated" : "Customer created");
       setShowForm(false);
