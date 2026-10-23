@@ -111,11 +111,20 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
                 discount = values["discount"]
                 if discount > subtotal:
                     raise ValidationError({"discount": "Discount cannot exceed the subtotal."})
+                total = subtotal - discount
+                if "expected_total" in values and values["expected_total"] != total:
+                    raise ValidationError({"expected_total": "The sale total changed. Refresh prices and review the cart before retrying."})
+                if "amount_paid" in values:
+                    amount_paid = values["amount_paid"]
+                    if amount_paid < total:
+                        raise ValidationError({"amount_paid": "Amount received is less than the server-calculated sale total."})
+                    if values["payment_method"] != Sale.PaymentMethod.CASH and amount_paid != total:
+                        raise ValidationError({"amount_paid": "For non-cash methods, the recorded amount must equal the sale total."})
                 sale = Sale.objects.create(
                     sale_number=values["sale_number"], idempotency_key=key or None,
                     branch=branch, cashier=request.user, payment_method=values["payment_method"],
                     customer_name=values.get("customer_name", ""), customer_phone=values.get("customer_phone", ""),
-                    subtotal=subtotal, discount=discount, total=subtotal-discount, notes=values.get("notes", ""),
+                    subtotal=subtotal, discount=discount, total=total, notes=values.get("notes", ""),
                 )
                 for product, balance, quantity, price, line_total in lines:
                     balance.quantity_on_hand -= quantity
