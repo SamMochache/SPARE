@@ -20,7 +20,8 @@ interface ShoppingCartProps {
   onSetQuantity: (productId: number, quantity: number) => void;
   onRemove: (productId: number) => void;
   onSelectCustomer: (id: number) => void;
-  onCreateCustomer: (input: {name: string;phone: string;}) => void;
+  onCreateCustomer: (input: {name: string;phone: string;}) => Promise<void>;
+  onSearchCustomers: (query: string) => Promise<void>;
   onOpenDiscount: () => void;
   onRemoveDiscount: () => void;
   onNoteChange: (note: string) => void;
@@ -63,7 +64,7 @@ export function ShoppingCart(props: ShoppingCartProps) {
             </button>
           </div>
         </div>
-        <CustomerPicker customer={customer} customers={customers} onSelect={props.onSelectCustomer} onCreate={props.onCreateCustomer} />
+        <CustomerPicker customer={customer} customers={customers} onSelect={props.onSelectCustomer} onCreate={props.onCreateCustomer} onSearch={props.onSearchCustomers} />
       </div>
 
       <div className="flex-1 min-h-[160px] lg:overflow-y-auto">
