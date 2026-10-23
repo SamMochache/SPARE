@@ -32,7 +32,7 @@ const methods: {
   icon: BanknoteIcon
 }, {
   id: 'mpesa',
-  label: 'M-Pesa',
+  label: 'M-Pesa (record)',
   icon: SmartphoneIcon
 }, {
   id: 'card',
@@ -109,7 +109,7 @@ export function CheckoutModal({
         Cancel
       </Button>
       <Button variant="primary" onClick={confirm} disabled={!evaluation.valid} loading={processing}>
-        Confirm payment · {formatKES(totals.total)}
+        Record sale · {formatKES(totals.total)}
       </Button>
     </>;
   return <Modal open={open} onClose={onClose} dismissible={!processing} size="lg" title={sale ? 'Sale complete' : 'Checkout'} description={sale ? `Receipt ${sale.receiptNo} · recorded in Django` : `${totals.itemCount} items · ${customer.name}`} footer={footer}>
@@ -161,11 +161,11 @@ export function CheckoutModal({
 
           {method === 'mpesa' && <MpesaPanel state={checkout.mpesa} onChange={checkout.setMpesa} total={totals.total} />}
 
-          {method === 'card' && <FormField label="Terminal approval code" htmlFor="card-ref" required hint="Process the card on the PDQ terminal first, then enter the approval code from its slip.">
+          {method === 'card' && <FormField label="Terminal approval code" htmlFor="card-ref" required hint="Verify the card externally first. The current API records the payment method only; this approval code is not saved.">
               <input id="card-ref" autoFocus value={checkout.cardRef} onChange={(e) => checkout.setCardRef(e.target.value.toUpperCase())} placeholder="e.g. 084512" className={`${inputClass} font-mono`} />
             </FormField>}
 
-          {method === 'bank' && <FormField label="Bank transfer reference" htmlFor="bank-ref" required hint="Confirm the transfer has reflected in the shop account before completing.">
+          {method === 'bank' && <FormField label="Bank transfer reference" htmlFor="bank-ref" required hint="Verify the transfer externally first. The current API records the payment method only; this reference is not saved.">
               <input id="bank-ref" autoFocus value={checkout.bankRef} onChange={(e) => checkout.setBankRef(e.target.value.toUpperCase())} placeholder="e.g. FT26292XK8Q1" className={`${inputClass} font-mono`} />
             </FormField>}
 
@@ -181,7 +181,7 @@ export function CheckoutModal({
                 Change due: <span className="font-semibold text-success tabular-nums">{formatKES(evaluation.change)}</span>
               </p> : evaluation.balanceDue > 0 ? <p className="text-sm text-ink-muted">
                 Balance to customer account: <span className="font-semibold text-warning tabular-nums">{formatKES(evaluation.balanceDue)}</span>
-              </p> : <p className="text-sm text-success font-medium">Ready to complete.</p>}
+              </p> : <p className="text-sm text-success font-medium">Ready to record sale. Payment verification is external.</p>}
           </div>
         </div>}
     </Modal>;
