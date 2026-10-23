@@ -120,7 +120,7 @@ function toApiProduct(input: ProductInput, categoryId: number | null) {
 
 export async function fetchCatalogue(): Promise<Product[]> {
   const [apiProducts, balances] = await Promise.all([
-    getAll<ApiProduct>("/api/v1/products/?is_active=false"),
+    getAll<ApiProduct>("/api/v1/products/"),
     getAll<ApiStockBalance>("/api/v1/stock-balances/")
   ]);
   const quantities = new Map<number, number>();

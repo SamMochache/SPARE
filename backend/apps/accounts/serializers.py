@@ -4,9 +4,13 @@ from .models import User
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """Expose safe profile fields; role and privilege flags are read-only."""
+    """Expose safe profile fields and the authenticated user's branch assignment."""
+
+    branch_id = serializers.IntegerField(read_only=True, allow_null=True)
+    branch_name = serializers.CharField(source="branch.name", read_only=True, allow_null=True, default=None)
+    is_superuser = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
-        fields = ("id", "username", "first_name", "last_name", "email", "role")
-        read_only_fields = ("id", "username", "role")
+        fields = ("id", "username", "first_name", "last_name", "email", "role", "branch_id", "branch_name", "is_superuser")
+        read_only_fields = ("id", "username", "role", "branch_id", "branch_name", "is_superuser")
