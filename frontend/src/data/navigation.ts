@@ -30,17 +30,17 @@ export const navItems: NavItem[] = [
 {
   label: 'Inventory Management', path: '/inventory', icon: WarehouseIcon, ready: true,
   description: 'Branch stock levels, receipts, adjustments and movement history.',
-  planned: ['Stock levels with low and out-of-stock filters', 'Stock adjustments with reasons and approval', 'Transfers between branches', 'Damaged and returned goods tracking', 'Full movement history and valuation', 'Reorder suggestions']
+  planned: ['Transfers between branches', 'Approval workflows', 'Reorder suggestions']
 },
 {
   label: 'Sales & Orders', path: '/sales', icon: ReceiptTextIcon, ready: true,
   description: 'Sales history, receipts, returns and refunds.',
-  planned: ['Searchable sales history with date, cashier and payment filters', 'Sale detail with items, payments and receipt', 'Return and refund requests with approval', 'Cancelled transaction tracking']
+  planned: ['Payment settlement verification', 'Fiscal receipts and tax calculation']
 },
 {
-  label: 'Customers', path: '/customers', icon: UsersIcon, ready: false,
-  description: 'Retail and wholesale accounts, credit and statements.',
-  planned: ['Customer profiles with retail or wholesale pricing', 'Credit sales and payment tracking', 'Purchase history', 'Customer statement preview']
+  label: 'Customers', path: '/customers', icon: UsersIcon, ready: true,
+  description: 'Customer contacts and retail/wholesale profiles.',
+  planned: ['POS customer picker integration', 'Credit sales and payment tracking', 'Purchase history and statements']
 },
 {
   label: 'Suppliers', path: '/suppliers', icon: TruckIcon, ready: false,
@@ -48,22 +48,22 @@ export const navItems: NavItem[] = [
   planned: ['Supplier directory with KRA PIN and contacts', 'Supplied categories', 'Outstanding supplier balances']
 },
 {
-  label: 'Purchases & Restocking', path: '/purchases', icon: BoxesIcon, ready: false,
+  label: 'Purchases & Restocking', path: '/purchases', icon: BoxesIcon, ready: true,
   description: 'Purchase orders and goods received.',
-  planned: ['Purchase orders: Draft → Submitted → Received', 'Goods-received confirmation with damaged quantities', 'Expected delivery tracking']
+  planned: ['Supplier invoices and accounts payable']
 },
 {
   label: 'Reports & Analytics', path: '/reports', icon: BarChart3Icon, ready: false, dividerBefore: true,
   description: 'Sales, profit, stock and balance reports.',
-  planned: ['Revenue, COGS, discounts and gross margin', 'Best-selling and slow-moving parts', 'Sales by cashier and payment method', 'CSV and PDF export']
+  planned: ['Revenue, COGS, discounts and gross margin', 'Sales by cashier and payment method', 'CSV and PDF export']
 },
 {
   label: 'User Management', path: '/users', icon: ShieldCheckIcon, ready: false,
-  description: 'Staff accounts, roles and permissions.',
-  planned: ['Create and deactivate staff accounts', 'Role assignment: Admin, Manager, Cashier, Inventory, Sales Rep', 'Last-login activity', 'Permission-denied states']
+  description: 'Staff account management and permissions.',
+  planned: ['Create/deactivate staff accounts', 'Role assignment', 'Last-login activity']
 },
 {
   label: 'Settings', path: '/settings', icon: SettingsIcon, ready: false,
   description: 'Shop profile, tax, receipts and payments.',
-  planned: ['Shop profile and branches', 'Currency (KES) and VAT configuration', 'Receipt and invoice numbering', 'Payment methods and low-stock thresholds']
+  planned: ['Shop profile and branches', 'VAT configuration', 'Receipt numbering', 'Payment-provider integration']
 }];
