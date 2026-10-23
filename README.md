@@ -2,7 +2,7 @@
 
 AutoParts Pro is an automotive parts shop management application. The repository contains a React, TypeScript, and Vite frontend and a Django REST API backend under active staged development.
 
- > **Integration status:** JWT authentication and the product catalogue API are connected. POS, dashboard reporting, purchasing, customer records, and stock-changing workflows still contain prototype behavior. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
+> **Integration status:** JWT authentication and the product catalogue API are connected. POS, dashboard reporting, purchasing, customer records, and stock-changing workflows still contain prototype behavior. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
 
 ## Repository layout
 
