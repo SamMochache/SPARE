@@ -6,6 +6,7 @@ import { AppDataProvider } from "./contexts/AppDataContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { navItems } from "./data/navigation";
 import { Dashboard } from "./pages/Dashboard";
+import { Customers } from "./pages/Customers";
 import { Inventory } from "./pages/Inventory";
 import { Login } from "./pages/Login";
 import { ModulePlaceholder } from "./pages/ModulePlaceholder";
@@ -38,6 +39,7 @@ export function App() {
             <Route path="inventory" element={<Inventory />} />
             <Route path="purchases" element={<Purchasing />} />
             <Route path="sales" element={<SalesHistory />} />
+            <Route path="customers" element={<Customers />} />
             {navItems.filter((item) => !item.ready && item.path !== "/inventory" && item.path !== "/purchases" && item.path !== "/sales").map((item) => (
               <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />
             ))}
