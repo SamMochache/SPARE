@@ -57,3 +57,49 @@ export function archiveCustomer(id: number) {
 export function fetchCustomerSalesHistory(id: number) {
   return apiRequest<CustomerSalesSummary>(`/api/v1/customers/${id}/sales/`);
 }
+
+
+export type CustomerAccountEntryType = "charge" | "payment" | "credit_note" | "adjustment_debit" | "adjustment_credit";
+
+export interface CustomerAccountEntry {
+  id: number;
+  entry_type: CustomerAccountEntryType;
+  amount: string;
+  sale: number | null;
+  reference: string;
+  notes: string;
+  created_by: number | null;
+  created_by_username: string | null;
+  created_at: string;
+  running_balance?: string;
+}
+
+export interface CustomerStatement {
+  customer_id: number;
+  customer_name: string;
+  credit_limit: string;
+  balance: string;
+  entries: CustomerAccountEntry[];
+}
+
+export interface CustomerPaymentInput {
+  amount: string;
+  reference?: string;
+  notes?: string;
+}
+
+export interface CustomerPaymentResponse {
+  entry: CustomerAccountEntry;
+  balance: string;
+}
+
+export function fetchCustomerStatement(id: number) {
+  return apiRequest<CustomerStatement>(`/api/v1/customers/${id}/statement/`);
+}
+
+export function recordCustomerPayment(id: number, input: CustomerPaymentInput) {
+  return apiRequest<CustomerPaymentResponse>(`/api/v1/customers/${id}/payments/`, {
+    method: "POST",
+    body: input,
+  });
+}
