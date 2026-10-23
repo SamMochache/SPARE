@@ -40,6 +40,15 @@ class SalesAPITests(TestCase):
         self.assertEqual(sale.customer_phone, "+254712345678")
         self.assertEqual(response.data["customer_id"], customer.pk)
 
+    def test_customer_history_only_returns_linked_sales(self):
+        customer = Customer.objects.create(name="History Garage", phone="+254711111111")
+        created = self.client.post("/api/v1/sales/checkout/", self.checkout_payload(customer=customer.pk), format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        response = self.client.get(f"/api/v1/customers/{customer.pk}/sales/")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["customer_id"], customer.pk)
+
     def test_checkout_rejects_archived_customer(self):
         customer = Customer.objects.create(name="Archived Garage", phone="+254700000000", is_active=False)
         response = self.client.post("/api/v1/sales/checkout/", self.checkout_payload(customer=customer.pk), format="json")
