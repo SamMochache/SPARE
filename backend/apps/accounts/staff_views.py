@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from .models import Branch
 from .permissions import OwnerOrManager
-from .serializers import StaffUserSerializer
+from .staff_serializers import StaffUserSerializer
 
 User = get_user_model()
 
