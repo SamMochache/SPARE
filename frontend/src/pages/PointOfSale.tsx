@@ -78,6 +78,14 @@ export function PointOfSale() {
   return (
     <div className="flex flex-col lg:flex-row lg:h-full lg:min-h-0">
       <section className="flex-1 min-w-0 flex flex-col lg:min-h-0" aria-label="Product catalog">
+        {isOwner && <div className="border-b border-line bg-white px-4 py-3">
+          <label htmlFor="pos-branch" className="block text-xs font-semibold text-ink-muted">Selling branch</label>
+          <select id="pos-branch" value={selectedBranchId ?? ""} onChange={(event) => setSelectedBranchId(event.target.value ? Number(event.target.value) : null)} className="mt-1.5 h-10 w-full max-w-sm rounded-lg border border-line bg-white px-3 text-sm text-ink" disabled={availableBranches.length === 0}>
+            <option value="">Select an active branch</option>
+            {availableBranches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          {branchLoadError && <p role="alert" className="mt-1 text-xs text-rose-700">{branchLoadError}</p>}
+        </div>}
         <POSProductCatalog products={pos.products} cartQuantities={pos.cartQuantities} onAdd={pos.addToCart} searchRef={searchRef} />
       </section>
 
@@ -122,6 +130,7 @@ export function PointOfSale() {
         }}
         totals={pos.totals}
         customer={pos.customer}
+        branchId={branchId}
         onComplete={pos.completeSale} />
       
       <DiscountModal
