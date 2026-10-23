@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q, Sum, Count
 from decimal import Decimal
 from rest_framework import filters, status, viewsets
@@ -88,24 +88,47 @@ class CustomerViewSet(viewsets.ModelViewSet):
         serializer = CustomerPaymentInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
-        with transaction.atomic():
-            customer = Customer.objects.select_for_update().filter(pk=pk).first()
-            if customer is None:
-                from django.http import Http404
-                raise Http404
-            balance = customer_balance(customer)
-            if balance <= 0:
-                raise ValidationError({"amount": "This customer has no outstanding balance."})
-            if values["amount"] > balance:
-                raise ValidationError({"amount": f"Payment cannot exceed the outstanding balance of {balance}."})
-            entry = CustomerAccountEntry.objects.create(
-                customer=customer,
-                entry_type=CustomerAccountEntry.EntryType.PAYMENT,
-                amount=values["amount"],
-                reference=values.get("reference", ""),
-                notes=values.get("notes", ""),
-                created_by=request.user,
-            )
+        idempotency_key = values.get("idempotency_key")
+        try:
+            with transaction.atomic():
+                customer = Customer.objects.select_for_update().filter(pk=pk).first()
+                if customer is None:
+                    from django.http import Http404
+                    raise Http404
+                if idempotency_key:
+                    existing = CustomerAccountEntry.objects.filter(idempotency_key=idempotency_key).first()
+                    if existing:
+                        if existing.customer_id != customer.pk or existing.amount != values["amount"] or existing.entry_type != CustomerAccountEntry.EntryType.PAYMENT:
+                            raise ValidationError({"idempotency_key": "This key has already been used for a different payment."})
+                        return Response({
+                            "entry": CustomerAccountEntrySerializer(existing).data,
+                            "balance": str(customer_balance(customer)),
+                        }, status=status.HTTP_200_OK)
+                balance = customer_balance(customer)
+                if balance <= 0:
+                    raise ValidationError({"amount": "This customer has no outstanding balance."})
+                if values["amount"] > balance:
+                    raise ValidationError({"amount": f"Payment cannot exceed the outstanding balance of {balance}."})
+                entry = CustomerAccountEntry.objects.create(
+                    customer=customer,
+                    entry_type=CustomerAccountEntry.EntryType.PAYMENT,
+                    amount=values["amount"],
+                    reference=values.get("reference", ""),
+                    notes=values.get("notes", ""),
+                    idempotency_key=idempotency_key or None,
+                    created_by=request.user,
+                )
+        except IntegrityError:
+            if idempotency_key:
+                existing = CustomerAccountEntry.objects.filter(idempotency_key=idempotency_key).first()
+                if existing and existing.customer_id == int(pk) and existing.amount == values["amount"] and existing.entry_type == CustomerAccountEntry.EntryType.PAYMENT:
+                    return Response({
+                        "entry": CustomerAccountEntrySerializer(existing).data,
+                        "balance": str(customer_balance(existing.customer)),
+                    }, status=status.HTTP_200_OK)
+                if existing:
+                    raise ValidationError({"idempotency_key": "This key has already been used for a different payment."})
+            raise
         return Response({
             "entry": CustomerAccountEntrySerializer(entry).data,
             "balance": str(customer_balance(customer)),

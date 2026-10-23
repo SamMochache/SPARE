@@ -40,6 +40,7 @@ class CustomerAccountEntry(models.Model):
     amount = models.DecimalField(max_digits=14, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))])
     sale = models.ForeignKey("sales.Sale", null=True, blank=True, on_delete=models.PROTECT, related_name="account_entries")
     reference = models.CharField(max_length=80, blank=True)
+    idempotency_key = models.CharField(max_length=128, unique=True, null=True, blank=True)
     notes = models.CharField(max_length=255, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="customer_account_entries")
     created_at = models.DateTimeField(auto_now_add=True)
