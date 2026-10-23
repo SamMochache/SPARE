@@ -20,8 +20,7 @@ export interface SaleRecord {
   cashier_username: string | null;
   status: "completed" | "partially_refunded" | "refunded";
   payment_method: "cash" | "mpesa" | "card" | "bank" | "credit";
-  customer?: number;
-  customer_id?: number | null;
+  customer_id: number | null;
   customer_name: string;
   customer_phone: string;
   subtotal: string;
@@ -88,6 +87,7 @@ export function createSaleReturn(saleId: number, input: CreateReturnInput) {
 
 export interface CheckoutSaleInput {
   branch?: number;
+  customer?: number;
   sale_number: string;
   idempotency_key: string;
   payment_method: "cash" | "mpesa" | "card" | "bank";
