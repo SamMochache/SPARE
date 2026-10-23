@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScanBarcodeIcon, SearchXIcon, XIcon } from 'lucide-react';
+import { RefreshCwIcon, ScanBarcodeIcon, SearchXIcon, XIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Product } from '../../types/product';
 import { formatKES } from '../../utils/currency';
@@ -12,9 +12,12 @@ interface POSProductCatalogProps {
   cartQuantities: Map<number, number>;
   onAdd: (product: Product) => boolean;
   searchRef: React.RefObject<HTMLInputElement>;
+  loading: boolean;
+  error: string;
+  onRetry: () => void;
 }
 
-export function POSProductCatalog({ products, cartQuantities, onAdd, searchRef }: POSProductCatalogProps) {
+export function POSProductCatalog({ products, cartQuantities, onAdd, searchRef, loading, error, onRetry }: POSProductCatalogProps) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
   const [brand, setBrand] = useState('All');
@@ -120,7 +123,7 @@ export function POSProductCatalog({ products, cartQuantities, onAdd, searchRef }
           {results.length} {results.length === 1 ? 'part' : 'parts'}
           {query && ` matching "${query}"`}
         </p>
-        {results.length === 0 ?
+        {error ? <div role="alert" className="mx-auto max-w-xl rounded-xl border border-danger/30 bg-danger-soft p-5 text-center"><p className="text-sm font-semibold text-danger">Could not load live products</p><p className="mt-1 text-sm text-danger/90">{error}</p><button type="button" onClick={onRetry} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-danger/30 bg-white px-3 py-2 text-sm font-semibold text-ink"><RefreshCwIcon className="h-4 w-4" />Retry</button></div> : loading ? <p className="py-16 text-center text-sm text-ink-muted">Loading products from the API…</p> : results.length === 0 ?
         <div className="py-16 text-center">
             <SearchXIcon className="w-7 h-7 text-ink-subtle mx-auto" aria-hidden="true" />
             <p className="text-sm font-medium text-ink mt-3">No parts found</p>
