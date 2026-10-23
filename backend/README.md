@@ -46,3 +46,8 @@ Fields include `name`, `phone`, `email`, `type` (`retail` or `wholesale`), `kraP
 - Schema and docs: `/api/schema/`, `/api/docs/`
 
 Run checks with `python manage.py check`, `python manage.py makemigrations --check --dry-run`, and `python manage.py test`. Test against a configured database before deployment. No CI/CD workflows are included.
+
+
+### Customer-linked sales
+
+New POS checkouts can include an active customer ID. The sale keeps a nullable foreign key to the customer while retaining name/phone snapshots for historical receipts. Customer records expose `GET /api/v1/customers/{id}/sales/` for branch-scoped purchase history and aggregate gross/refunded totals. Existing sales are not automatically linked based on matching names or phone numbers; credit balances/statements are not implemented.
