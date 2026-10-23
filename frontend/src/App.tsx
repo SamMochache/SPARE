@@ -14,6 +14,7 @@ import { PointOfSale } from "./pages/PointOfSale";
 import { Products } from "./pages/Products";
 import { Purchasing } from "./pages/Purchasing";
 import { SalesHistory } from "./pages/SalesHistory";
+import { Settings } from "./pages/Settings";
 
 function RequireAuth() {
   const { user, loading } = useAuth();
@@ -40,7 +41,8 @@ export function App() {
             <Route path="purchases" element={<Purchasing />} />
             <Route path="sales" element={<SalesHistory />} />
             <Route path="customers" element={<Customers />} />
-            {navItems.filter((item) => !item.ready && item.path !== "/inventory" && item.path !== "/purchases" && item.path !== "/sales").map((item) => (
+            <Route path="settings" element={<Settings />} />
+            {navItems.filter((item) => !item.ready && item.path !== "/inventory" && item.path !== "/purchases" && item.path !== "/sales" && item.path !== "/settings").map((item) => (
               <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />
             ))}
             <Route path="*" element={<Navigate to="/" replace />} />
