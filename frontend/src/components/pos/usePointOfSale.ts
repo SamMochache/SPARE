@@ -140,6 +140,8 @@ export function usePointOfSale() {
       customer_name: customer.id === WALK_IN_CUSTOMER_ID ? "" : customer.name,
       customer_phone: customer.id === WALK_IN_CUSTOMER_ID ? "" : customer.phone,
       discount: totals.discount.toFixed(2),
+      expected_total: totals.total.toFixed(2),
+      amount_paid: result.amountPaid.toFixed(2),
       notes: note,
       items: items.map((item) => ({ product: item.product.id, quantity: item.quantity }))
     });
