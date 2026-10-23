@@ -23,7 +23,7 @@ export interface CheckoutResult {
 const PROFILE_DISCOUNT = 'Customer profile';
 
 export function usePointOfSale() {
-  const { products, customers, heldSales, branch, refreshProducts, holdSale, removeHeldSale, addCustomer } = useAppData();
+  const { products, customers, heldSales, refreshProducts, holdSale, removeHeldSale, addCustomer } = useAppData();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customerId, setCustomerId] = useState(WALK_IN_CUSTOMER_ID);
   const [discount, setDiscount] = useState<Discount | null>(null);
@@ -170,8 +170,8 @@ export function usePointOfSale() {
         total: serverTotal
       },
       ...result,
-      amountPaid: result.payments[0]?.amount ?? serverTotal,
-      change: Math.max(0, roundMoney((result.payments[0]?.amount ?? serverTotal) - serverTotal)),
+      amountPaid: result.amountPaid,
+      change: Math.max(0, roundMoney(result.amountPaid - serverTotal)),
       balanceDue: 0,
       note: response.notes
     };
