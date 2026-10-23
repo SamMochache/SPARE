@@ -10,6 +10,11 @@ type Staff = { id:number; username:string; first_name:string; last_name:string; 
 const roles = [{value:"manager",label:"Manager"},{value:"cashier",label:"Cashier"},{value:"inventory",label:"Inventory"},{value:"accountant",label:"Accountant"},{value:"owner",label:"Owner"}];
 const inputClass="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink";
 const initial={username:"",first_name:"",last_name:"",email:"",role:"cashier",branch_id:"",password:""};
+function asList<T>(value: unknown): T[] {
+ if (Array.isArray(value)) return value as T[];
+ if (value && typeof value === "object" && "results" in value && Array.isArray((value as {results?:unknown}).results)) return (value as {results:T[]}).results;
+ return [];
+}
 export function UserManagement() {
  const {user}=useAuth();
  const [staff,setStaff]=useState<Staff[]>([]);
@@ -20,7 +25,7 @@ export function UserManagement() {
  const [saving,setSaving]=useState(false);
  const [draft,setDraft]=useState(initial);
  const canAssignOwner=Boolean(user?.is_superuser||user?.role==="owner");
- const load=useCallback(async()=>{setLoading(true);setError("");try{const [people,locations]=await Promise.all([apiRequest<Staff[]>("/api/v1/auth/users/"),apiRequest<Array<{id:number;name:string}>>("/api/v1/auth/branches/")]);setStaff(people);setBranches(locations);}catch(e){setError(e instanceof Error?e.message:"Could not load staff accounts.");}finally{setLoading(false);}},[]);
+ const load=useCallback(async()=>{setLoading(true);setError("");try{const [peopleResponse,branchResponse]=await Promise.all([apiRequest<unknown>("/api/v1/auth/users/"),apiRequest<unknown>("/api/v1/auth/branches/")]);const people=asList<Staff>(peopleResponse);const locations=asList<{id:number;name:string}>(branchResponse);setStaff(people);setBranches(locations);}catch(e){setError(e instanceof Error?e.message:"Could not load staff accounts.");}finally{setLoading(false);}},[]);
  useEffect(()=>{void load();},[load]);
  async function create(event:React.FormEvent<HTMLFormElement>){event.preventDefault();setSaving(true);try{const body={...draft,branch_id:draft.branch_id?Number(draft.branch_id):null};const person=await apiRequest<Staff>("/api/v1/auth/users/",{method:"POST",body});setStaff(p=>[...p,person].sort((a,b)=>a.username.localeCompare(b.username)));setDraft(initial);setShowForm(false);toast.success("Staff account created");}catch(e){toast.error("Could not create staff account",{description:e instanceof Error?e.message:"Check the details and try again."});}finally{setSaving(false);}}
  async function toggle(person:Staff){try{const updated=await apiRequest<Staff>(`/api/v1/auth/users/${person.id}/`,{method:"PATCH",body:{is_active:!person.is_active}});setStaff(p=>p.map(x=>x.id===updated.id?updated:x));toast.success(updated.is_active?"Staff account activated":"Staff account deactivated");}catch(e){toast.error("Account status could not be changed",{description:e instanceof Error?e.message:"Please try again."});}}
