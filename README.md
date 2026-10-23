@@ -48,6 +48,7 @@ See [backend/README.md](backend/README.md) for setup, API endpoints, permissions
 3. **Inventory:** branch stock balances, append-only movement ledger, transactional receipts/adjustments, and non-negative stock integrity — implemented in PR #12.
 4. **Purchasing:** supplier management, draft/order/cancel workflows, partial goods receipt, and stock-ledger integration — implemented in PR #13. Supplier invoicing and accounts payable remain future work.
 5. **POS and financial integrity:** transactional checkout, server-side totals, stock checks, idempotency, sale history, return/refund audit records — implemented in PR #14. External payment-provider verification and settlement remain future work.
-6. **Reporting and integration:** dashboard KPIs, daily sales, inventory valuation/low-stock, and top-product reports — implemented in PR #15. Frontend API client integration and deployment instructions remain future work.
+6. **Reporting:** dashboard KPIs, daily sales, inventory valuation/low-stock, and top-product reports — implemented in PR #15.
+7. **Frontend API/auth foundation:** shared HTTP client, JWT login/refresh/logout, protected routes, and environment configuration — implemented in PR #16. Product, POS, inventory, and dashboard screens still require live-data wiring.
 
 Each stage should be implemented on a focused feature branch and reviewed before merging. No CI/CD workflows are part of this implementation plan.
