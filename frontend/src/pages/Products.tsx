@@ -17,11 +17,10 @@ import { downloadFile, toCSV } from '../utils/files';
 import { getStockStatus, stockStatusLabel } from '../utils/stock';
 
 export function Products() {
-  const { products, addProduct, updateProduct } = useAppData();
+  const { products, addProduct, updateProduct, productsLoading, productsError, refreshProducts } = useAppData();
   const list = useProductList(products);
   const [searchParams, setSearchParams] = useSearchParams();
   const [view, setView] = useState<ProductView>('table');
-  const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [detailId, setDetailId] = useState<number | null>(null);
@@ -30,11 +29,6 @@ export function Products() {
   const detail = products.find((p) => p.id === detailId) ?? null;
   const skuIndex = useMemo(() => products.map((p) => ({ id: p.id, sku: p.sku })), [products]);
   const alertCount = products.filter((p) => ['low_stock', 'out_of_stock'].includes(getStockStatus(p))).length;
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setLoading(false), 300);
-    return () => window.clearTimeout(t);
-  }, []);
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
@@ -57,15 +51,19 @@ export function Products() {
     setFormOpen(true);
   }
 
-  function handleSave(input: ProductInput) {
-    if (editing) {
-      updateProduct(editing.id, input);
-      toast.success('Product updated', { description: `${input.name} · saved in this browser only, not yet synced to a server.` });
-    } else {
-      const created = addProduct(input);
-      toast.success('Product added', { description: `${created.name} · saved in this browser only, not yet synced to a server.` });
+  async function handleSave(input: ProductInput) {
+    try {
+      if (editing) {
+        await updateProduct(editing.id, input);
+        toast.success('Product updated', { description: 'Catalogue details saved to the backend.' });
+      } else {
+        const created = await addProduct(input);
+        toast.success('Product added', { description: `${created.name} saved to the backend. Opening stock must be recorded separately in Inventory.` });
+      }
+      setFormOpen(false);
+    } catch (error) {
+      toast.error('Could not save product', { description: error instanceof Error ? error.message : 'Check your connection and try again.' });
     }
-    setFormOpen(false);
   }
 
   function exportCSV() {
@@ -95,6 +93,17 @@ export function Products() {
         } />
       
 
+      {productsError && (
+        <div role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-danger">Could not load the live catalogue</p>
+            <p className="text-sm text-danger/90 mt-1">{productsError}</p>
+            <p className="text-xs text-ink-muted mt-1">The list may show cached prototype data. Do not use it for real stock or sales until the API connection is restored.</p>
+          </div>
+          <Button size="sm" onClick={() => void refreshProducts().catch(() => undefined)}>Retry</Button>
+        </div>
+      )}
+
       <section className="bg-white border border-line rounded-xl shadow-card overflow-hidden" aria-label="Product list">
         <ProductFilters
           filters={list.filters}
@@ -108,8 +117,8 @@ export function Products() {
           }} />
         
 
-        {loading ?
-        <div className="divide-y divide-line" aria-busy="true" aria-label="Loading products">
+        {productsLoading ?
+        <div className="divide-y divide-line" aria-busy="true" aria-label="Loading products from backend">
             {Array.from({ length: 6 }).map((_, i) =>
           <div key={i} className="flex items-center gap-4 px-4 py-3.5">
                 <div className="w-10 h-10 rounded-lg bg-canvas animate-pulse" />

@@ -2,7 +2,7 @@
 
 AutoParts Pro is an automotive parts shop management application. The repository contains a React, TypeScript, and Vite frontend and a Django REST API backend under active staged development.
 
-> **Integration status:** The frontend still uses sample data and browser storage until its API integration is implemented. The M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat inventory, payment, or reporting features as production-ready until implemented and tested.
+> **Integration status:** JWT authentication and the product catalogue API are connected. POS, dashboard reporting, purchasing, customer records, and stock-changing workflows still contain prototype behavior. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
 
 ## Repository layout
 
@@ -27,7 +27,7 @@ Other commands, run from `frontend/`:
 | `npm run preview` | Preview the latest production build. |
 | `npm run lint` | Run ESLint. |
 
-The frontend includes dashboard, simulated POS, and sample product-catalogue routes. Additional modules and live API integration are staged work.
+The frontend includes a live product catalogue backed by Django, plus prototype dashboard and simulated POS routes. Configure `VITE_API_BASE_URL` in `frontend/.env.local` to point to the Django API (default: `http://localhost:8000`). Sign in with a backend user created by an administrator. The catalogue displays backend product records and current stock balances; opening stock must be recorded separately through the inventory workflows. Product fields not represented by the backend schema (such as VAT rate, image, reorder level, and some fitment fields) are not yet first-class persisted fields.
 
 ## Backend stack and conventions
 

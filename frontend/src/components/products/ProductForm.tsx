@@ -185,11 +185,11 @@ export function ProductForm({ open, product, existing, onClose, onSave }: Produc
 
         <FormSection title="Inventory settings" description="Where the part lives and when to reorder.">
           <FormField
-            label={isEdit ? 'Quantity on hand' : 'Opening stock'}
+            label={isEdit ? 'Quantity on hand' : 'Opening stock (record separately)'}
             htmlFor="pf-quantity"
             required
             error={errors.quantity}
-            hint={isEdit ? 'Change stock through Inventory → Stock adjustment so it is audited.' : 'Units physically on the shelf today.'}>
+            hint={isEdit ? 'Stock is read from backend balances. Change it through Inventory → Stock adjustment so it is audited.' : 'This catalogue form does not create stock balances yet. Save the product, then receive stock through Inventory.'}>
             
             <input id="pf-quantity" inputMode="numeric" disabled={isEdit} value={values.quantity} onChange={(e) => setField('quantity', e.target.value.replace(/\D/g, ''))} placeholder="0" className={`${cls('quantity')} tabular-nums`} {...aria('quantity')} />
           </FormField>
