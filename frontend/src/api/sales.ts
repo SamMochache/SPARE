@@ -76,6 +76,8 @@ export interface CheckoutSaleInput {
   customer_name: string;
   customer_phone: string;
   discount: string;
+  expected_total: string;
+  amount_paid: string;
   notes: string;
   items: Array<{ product: number; quantity: number }>;
 }
