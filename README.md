@@ -2,7 +2,7 @@
 
 AutoParts Pro is an automotive parts shop management application. The repository contains a React, TypeScript, and Vite frontend and a Django REST API backend under active staged development.
 
-> **Integration status:** JWT authentication, product catalogue, and branch-scoped inventory screens are connected to Django. POS checkout, dashboard reporting, purchasing, and customer records still contain prototype behavior. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
+> **Integration status:** JWT authentication, product catalogue, branch-scoped inventory, and purchasing (suppliers, purchase orders, and goods receipts) are connected to Django. POS checkout, dashboard reporting, sales history, and customer records still contain prototype behavior. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
 
 ## Repository layout
 
@@ -28,6 +28,18 @@ Other commands, run from `frontend/`:
 | `npm run lint` | Run ESLint. |
 
 The frontend uses `VITE_API_BASE_URL` in `frontend/.env.local` to point to Django (default: `http://localhost:8000`). Sign in with a backend user created by an administrator. Product catalogue data and inventory stock balances are loaded from the API. Product fields not represented by the backend schema (such as VAT rate, image, reorder level, and some fitment fields) are not yet first-class persisted fields.
+
+## Purchasing screen
+
+The Purchasing & Restocking screen is connected to Django suppliers and purchase orders. Authorized staff can create suppliers, create draft purchase orders with multiple product lines, mark drafts as ordered, cancel eligible orders, and record partial or complete goods receipts. Receipt operations update branch stock balances and append inventory movement records atomically in the backend.
+
+- `GET/POST /api/v1/suppliers/` — supplier directory and supplier creation.
+- `GET/POST /api/v1/purchase-orders/` — list and create purchase orders.
+- `POST /api/v1/purchase-orders/{id}/order/` — submit a draft order.
+- `POST /api/v1/purchase-orders/{id}/receive/` — receive quantities against purchase-order lines.
+- `POST /api/v1/purchase-orders/{id}/cancel/` — cancel an eligible order.
+
+The backend enforces branch scope, purchasing roles, valid order states, active suppliers/products, and outstanding receipt quantities. Supplier invoice matching, accounts payable, expected delivery dates, damaged-quantity workflows, and purchase-order editing UI are not included yet.
 
 ## Inventory screen
 
