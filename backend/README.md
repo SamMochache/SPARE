@@ -33,7 +33,7 @@ All customer endpoints require JWT authentication. Active staff may read custome
 - `DELETE /api/v1/customers/{id}/` — soft-archive a customer.
 - `POST /api/v1/customers/{id}/restore/` — restore an archived customer.
 
-Fields include `name`, `phone`, `email`, `type` (`retail` or `wholesale`), `kraPin`, `discountRate` (0–100), and `creditLimit` (non-negative). Active phone numbers must be unique when provided. A credit limit is informational only: credit checkout, customer balances, payment posting, and statements are not implemented.
+Fields include `name`, `phone`, `email`, `type` (`retail` or `wholesale`), `kraPin`, `discountRate` (0–100), and `creditLimit` (non-negative). Active phone numbers must be unique when provided. Credit sales require a linked active customer and are blocked when the configured credit limit would be exceeded. The API posts credit-sale charges, customer payments, and credit notes for returned credit sales to an auditable customer ledger. Record payments with `POST /api/v1/customers/{id}/payments/` using `amount` and optional `reference`/`notes`; view the running statement with `GET /api/v1/customers/{id}/statement/`. Payments cannot exceed the current outstanding balance. Cash/M-Pesa/card/bank sales do not create customer debt entries.
 
 ## Other API groups
 
@@ -50,4 +50,4 @@ Run checks with `python manage.py check`, `python manage.py makemigrations --che
 
 ### Customer-linked sales
 
-New POS checkouts can include an active customer ID. The sale keeps a nullable foreign key to the customer while retaining name/phone snapshots for historical receipts. Customer records expose `GET /api/v1/customers/{id}/sales/` for branch-scoped purchase history and aggregate gross/refunded totals. Existing sales are not automatically linked based on matching names or phone numbers; credit balances/statements are not implemented.
+New POS checkouts can include an active customer ID. The sale keeps a nullable foreign key to the customer while retaining name/phone snapshots for historical receipts. Customer records expose `GET /api/v1/customers/{id}/sales/` for branch-scoped purchase history and aggregate gross/refunded totals. Existing sales are not automatically linked based on matching names or phone numbers; account statements and payment posting are implemented in the customer account ledger. Existing historical credit sales are not backfilled automatically.

@@ -1,9 +1,13 @@
+from django.db import transaction
 from django.db.models import Q, Sum, Count
 from decimal import Decimal
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Customer
+from rest_framework.exceptions import ValidationError
+from .models import Customer, CustomerAccountEntry
+from .account_serializers import CustomerAccountEntrySerializer, CustomerPaymentInputSerializer
+from .ledger import customer_balance
 from .permissions import CustomerAccess
 from .serializers import CustomerSerializer
 from apps.sales.models import Sale
@@ -56,6 +60,56 @@ class CustomerViewSet(viewsets.ModelViewSet):
             response.data.update({"customer_id": customer.pk, "total_sales": payload["total"], "total_refunded": payload["refunded"]})
             return response
         return Response(payload)
+
+    @action(detail=True, methods=("get",), url_path="statement")
+    def statement(self, request, pk=None):
+        customer = self.get_object()
+        entries = list(customer.account_entries.select_related("created_by", "sale").all())
+        balance = Decimal("0.00")
+        rows = []
+        for entry in entries:
+            if entry.entry_type in (CustomerAccountEntry.EntryType.CHARGE, CustomerAccountEntry.EntryType.ADJUSTMENT_DEBIT):
+                balance += entry.amount
+            else:
+                balance -= entry.amount
+            row = CustomerAccountEntrySerializer(entry).data
+            row["running_balance"] = str(balance)
+            rows.append(row)
+        return Response({
+            "customer_id": customer.pk,
+            "customer_name": customer.name,
+            "credit_limit": str(customer.credit_limit),
+            "balance": str(balance),
+            "entries": rows,
+        })
+
+    @action(detail=True, methods=("post",), url_path="payments")
+    def record_payment(self, request, pk=None):
+        serializer = CustomerPaymentInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        values = serializer.validated_data
+        with transaction.atomic():
+            customer = Customer.objects.select_for_update().filter(pk=pk).first()
+            if customer is None:
+                from django.http import Http404
+                raise Http404
+            balance = customer_balance(customer)
+            if balance <= 0:
+                raise ValidationError({"amount": "This customer has no outstanding balance."})
+            if values["amount"] > balance:
+                raise ValidationError({"amount": f"Payment cannot exceed the outstanding balance of {balance}."})
+            entry = CustomerAccountEntry.objects.create(
+                customer=customer,
+                entry_type=CustomerAccountEntry.EntryType.PAYMENT,
+                amount=values["amount"],
+                reference=values.get("reference", ""),
+                notes=values.get("notes", ""),
+                created_by=request.user,
+            )
+        return Response({
+            "entry": CustomerAccountEntrySerializer(entry).data,
+            "balance": str(customer_balance(customer)),
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=("post",), url_path="restore")
     def restore(self, request, pk=None):
