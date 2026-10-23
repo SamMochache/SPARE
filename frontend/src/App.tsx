@@ -13,6 +13,7 @@ import { ModulePlaceholder } from "./pages/ModulePlaceholder";
 import { PointOfSale } from "./pages/PointOfSale";
 import { Products } from "./pages/Products";
 import { Purchasing } from "./pages/Purchasing";
+import { Reports } from "./pages/Reports";
 import { SalesHistory } from "./pages/SalesHistory";
 import { Settings } from "./pages/Settings";
 import { Suppliers } from "./pages/Suppliers";
@@ -20,38 +21,27 @@ import { Suppliers } from "./pages/Suppliers";
 function RequireAuth() {
   const { user, loading } = useAuth();
   const location = useLocation();
-
-  if (loading) {
-    return <div className="min-h-screen grid place-items-center bg-canvas text-sm text-ink-muted">Loading your workspace…</div>;
-  }
+  if (loading) return <div className="min-h-screen grid place-items-center bg-canvas text-sm text-ink-muted">Loading your workspace…</div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
   return <AppDataProvider><ApplicationLayout /></AppDataProvider>;
 }
 
 export function App() {
-  return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<RequireAuth />}>
-            <Route index element={<Dashboard />} />
-            <Route path="pos" element={<PointOfSale />} />
-            <Route path="products" element={<Products />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="purchases" element={<Purchasing />} />
-            <Route path="sales" element={<SalesHistory />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="suppliers" element={<Suppliers />} />
-            {navItems.filter((item) => !item.ready && item.path !== "/inventory" && item.path !== "/purchases" && item.path !== "/sales" && item.path !== "/settings" && item.path !== "/suppliers").map((item) => (
-              <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />
-            ))}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-right" closeButton richColors toastOptions={{ style: { fontFamily: "Inter, system-ui, sans-serif" } }} />
-    </AuthProvider>
-  );
+  return <AuthProvider><BrowserRouter><Routes>
+    <Route path="/login" element={<Login />} />
+    <Route element={<RequireAuth />}>
+      <Route index element={<Dashboard />} />
+      <Route path="pos" element={<PointOfSale />} />
+      <Route path="products" element={<Products />} />
+      <Route path="inventory" element={<Inventory />} />
+      <Route path="purchases" element={<Purchasing />} />
+      <Route path="sales" element={<SalesHistory />} />
+      <Route path="customers" element={<Customers />} />
+      <Route path="settings" element={<Settings />} />
+      <Route path="suppliers" element={<Suppliers />} />
+      <Route path="reports" element={<Reports />} />
+      {navItems.filter((item) => !item.ready && !["/inventory", "/purchases", "/sales", "/settings", "/suppliers", "/reports"].includes(item.path)).map((item) => <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />)}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Route>
+  </Routes></BrowserRouter><Toaster position="top-right" closeButton richColors toastOptions={{ style: { fontFamily: "Inter, system-ui, sans-serif" } }} /></AuthProvider>;
 }
