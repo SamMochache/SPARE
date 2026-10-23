@@ -8,9 +8,17 @@ import { ShoppingCart } from '../components/pos/ShoppingCart';
 import { usePointOfSale } from '../components/pos/usePointOfSale';
 import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { formatKES } from '../utils/currency';
+import { fetchPurchasingBranches, type PurchasingBranch } from '../api/purchasing';
+import { useAuth } from '../contexts/AuthContext';
 
 export function PointOfSale() {
   const pos = usePointOfSale();
+  const { user } = useAuth();
+  const [availableBranches, setAvailableBranches] = useState<PurchasingBranch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<number | null>(user?.branch_id ?? null);
+  const [branchLoadError, setBranchLoadError] = useState('');
+  const isOwner = Boolean(user?.is_superuser || user?.role === 'owner');
+  const branchId = isOwner ? selectedBranchId : (user?.branch_id ?? null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [discountOpen, setDiscountOpen] = useState(false);
@@ -29,6 +37,24 @@ export function PointOfSale() {
   useEffect(() => {
     searchRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!isOwner) {
+      setSelectedBranchId(user?.branch_id ?? null);
+      return;
+    }
+    let active = true;
+    fetchPurchasingBranches().then((items) => {
+      if (!active) return;
+      const activeItems = items.filter((item) => item.is_active);
+      setAvailableBranches(activeItems);
+      setSelectedBranchId((current) => current && activeItems.some((item) => item.id === current) ? current : activeItems[0]?.id ?? null);
+      setBranchLoadError('');
+    }).catch((error) => {
+      if (active) setBranchLoadError(error instanceof Error ? error.message : 'Could not load branches.');
+    });
+    return () => { active = false; };
+  }, [isOwner, user?.branch_id]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
