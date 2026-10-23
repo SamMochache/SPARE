@@ -7,7 +7,7 @@ export interface Branch {
 export type NotificationTone = 'danger' | 'warning' | 'info' | 'success';
 
 export interface AppNotification {
-  id: string;
+  id: string | number;
   title: string;
   body: string;
   time: string;
