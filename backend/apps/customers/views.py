@@ -8,7 +8,6 @@ from .permissions import CustomerAccess
 from .serializers import CustomerSerializer
 from apps.sales.models import Sale
 from apps.sales.serializers import SaleSerializer
-from apps.sales.views import scope_sales
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
@@ -39,6 +38,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=("get",), url_path="sales")
     def sales(self, request, pk=None):
+        from apps.sales.views import scope_sales
         customer = self.get_object()
         queryset = scope_sales(Sale.objects.filter(customer=customer).select_related("branch", "cashier").prefetch_related("items"), request.user)
         summary = queryset.aggregate(count=Count("id"), total=Sum("total"), refunded=Sum("refunded_total"))
