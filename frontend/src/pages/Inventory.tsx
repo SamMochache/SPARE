@@ -43,7 +43,7 @@ export function Inventory() {
   const [saving, setSaving] = useState(false);
 
   const canWrite = Boolean(user && writableRoles.has(user.role));
-  const isOwner = user?.role === "owner" || user?.role === "owner" && user.branch_id === null;
+  const isOwner = user?.role === "owner" || user?.is_superuser === true;
   const selectedBranch = branches.find((item) => item.id === branchId) ?? null;
   const productById = useMemo(() => new Map(products.map((item) => [item.id, item])), [products]);
 
