@@ -6,6 +6,7 @@ class CustomerPaymentInputSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0.01)
     reference = serializers.CharField(max_length=80, required=False, allow_blank=True)
     notes = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    idempotency_key = serializers.CharField(max_length=128, required=False, allow_blank=False)
 
 
 class CustomerAccountEntrySerializer(serializers.ModelSerializer):
