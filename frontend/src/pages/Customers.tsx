@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArchiveIcon, SearchIcon, UserPlusIcon, UsersIcon } from "lucide-react";
-import { archiveCustomer, createCustomer, fetchCustomers, updateCustomer, type CustomerInput, type CustomerRecord, type CustomerType } from "../api/customers";
+import { archiveCustomer, createCustomer, fetchCustomerSalesHistory, fetchCustomers, updateCustomer, type CustomerInput, type CustomerRecord, type CustomerType, type CustomerSalesSummary } from "../api/customers";
 import { buttonClass } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import { inputClass } from "../components/ui/formStyles";
@@ -21,6 +21,10 @@ export function Customers() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [historyCustomerId, setHistoryCustomerId] = useState<number | null>(null);
+  const [history, setHistory] = useState<CustomerSalesSummary | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,6 +71,14 @@ export function Customers() {
     }
   }
 
+  async function toggleHistory(customer: CustomerRecord) {
+    if (historyCustomerId === customer.id) { setHistoryCustomerId(null); setHistory(null); return; }
+    setHistoryCustomerId(customer.id); setHistory(null); setHistoryError(""); setHistoryLoading(true);
+    try { setHistory(await fetchCustomerSalesHistory(customer.id)); }
+    catch (err) { setHistoryError(err instanceof Error ? err.message : "Could not load customer purchase history."); }
+    finally { setHistoryLoading(false); }
+  }
+
   async function archive(customer: CustomerRecord) {
     if (!window.confirm(`Archive ${customer.name}? It will no longer appear in active customer searches.`)) return;
     try {
@@ -105,7 +117,7 @@ export function Customers() {
       <section className="rounded-xl border border-line bg-white overflow-hidden">
         <div className="flex items-center justify-between border-b border-line p-4"><div><h2 className="font-semibold text-ink">Customer directory</h2><p className="text-xs text-ink-muted mt-1">{customers.length} result(s) on this page · active records</p></div><UsersIcon className="w-5 h-5 text-ink-subtle" aria-hidden="true" /></div>
         <div className="overflow-x-auto"><table className="w-full text-sm">
-          <thead><tr className="text-left text-xs text-ink-muted border-b border-line bg-canvas/60"><th className="px-5 py-3 font-medium">Customer</th><th className="px-3 py-3 font-medium">Contact</th><th className="px-3 py-3 font-medium">Type</th><th className="px-3 py-3 font-medium text-right">Discount</th><th className="px-3 py-3 font-medium text-right">Credit limit</th>{canManage && <th className="px-5 py-3 font-medium text-right">Actions</th>}</tr></thead>
+          <thead><tr className="text-left text-xs text-ink-muted border-b border-line bg-canvas/60"><th className="px-5 py-3 font-medium">Customer</th><th className="px-3 py-3 font-medium">Contact</th><th className="px-3 py-3 font-medium">Type</th><th className="px-3 py-3 font-medium text-right">Discount</th><th className="px-3 py-3 font-medium text-right">Credit limit</th><th className="px-3 py-3 font-medium">Purchase history</th>{canManage && <th className="px-5 py-3 font-medium text-right">Actions</th>}</tr></thead>
           <tbody className="divide-y divide-line">
             {customers.map((customer) => <tr key={customer.id}>
               <td className="px-5 py-3"><p className="font-medium text-ink">{customer.name}</p>{customer.kraPin && <p className="text-xs text-ink-muted">KRA PIN: {customer.kraPin}</p>}</td>
@@ -113,13 +125,15 @@ export function Customers() {
               <td className="px-3 py-3"><span className="rounded-full bg-canvas px-2 py-1 text-xs capitalize">{customer.type}</span></td>
               <td className="px-3 py-3 text-right tabular-nums">{Number(customer.discountRate)}%</td>
               <td className="px-3 py-3 text-right tabular-nums">{money(customer.creditLimit)}</td>
+              <td className="px-3 py-3"><button type="button" onClick={() => void toggleHistory(customer)} className="text-accent-strong hover:underline">{historyCustomerId === customer.id ? "Hide history" : "View history"}</button></td>
               {canManage && <td className="px-5 py-3"><div className="flex justify-end gap-2"><button type="button" onClick={() => beginEdit(customer)} className="text-accent-strong hover:underline">Edit</button><button type="button" onClick={() => void archive(customer)} className="inline-flex items-center gap-1 text-danger hover:underline"><ArchiveIcon className="w-3.5 h-3.5" aria-hidden="true" />Archive</button></div></td>}
             </tr>)}
-            {!customers.length && <tr><td colSpan={canManage ? 6 : 5} className="px-5 py-10 text-center text-ink-muted">{loading ? "Loading customer records…" : "No active customers found. Add a customer or change your search."}</td></tr>}
+            {!customers.length && <tr><td colSpan={canManage ? 7 : 6} className="px-5 py-10 text-center text-ink-muted">{loading ? "Loading customer records…" : "No active customers found. Add a customer or change your search."}</td></tr>}
+            {historyCustomerId !== null && <tr><td colSpan={canManage ? 7 : 6} className="bg-canvas/60 px-5 py-4"><h3 className="font-semibold text-ink">Purchase history: {customers.find((item) => item.id === historyCustomerId)?.name ?? "Customer"}</h3>{historyLoading ? <p className="mt-2 text-sm text-ink-muted">Loading linked sales…</p> : historyError ? <p role="alert" className="mt-2 text-sm text-danger">{historyError}</p> : history ? <><p className="mt-2 text-sm text-ink-muted">{history.count ?? history.results.length} linked sale(s) · Gross sales {money(history.total_sales)} · Refunded {money(history.total_refunded)}</p>{history.results.length ? <div className="mt-3 overflow-x-auto"><table className="w-full text-xs"><thead><tr className="text-left text-ink-muted"><th className="py-2">Receipt</th><th className="py-2">Date</th><th className="py-2">Branch</th><th className="py-2">Status</th><th className="py-2 text-right">Total</th></tr></thead><tbody>{history.results.map((sale) => <tr key={sale.id} className="border-t border-line"><td className="py-2 font-medium">{sale.sale_number}</td><td className="py-2">{new Date(sale.created_at).toLocaleString()}</td><td className="py-2">{sale.branch_name}</td><td className="py-2 capitalize">{sale.status.replaceAll("_", " ")}</td><td className="py-2 text-right">{money(sale.total)}</td></tr>)}</tbody></table></div> : <p className="mt-3 text-sm text-ink-muted">No sales have been linked to this customer yet. Older sales remain searchable by their recorded customer name.</p>}</> : null}</td></tr>}
           </tbody>
         </table></div>
       </section>
-      <p className="text-xs text-ink-muted">Customer directory records are live. Credit limits are informational only: this release does not post credit sales, calculate balances due, or provide customer statements. The POS quick-add picker is being integrated separately.</p>
+      <p className="text-xs text-ink-muted">Customer directory and linked purchase history are live. Historical sales recorded before customer linking remain unlinked. Credit limits are informational only; credit balances and statements are not yet supported.</p>
     </div>
   );
 }
