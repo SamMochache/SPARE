@@ -11,7 +11,8 @@ from rest_framework.response import Response
 
 from apps.accounts.models import Branch
 from apps.catalog.models import Product
-from apps.customers.models import Customer
+from apps.customers.models import Customer, CustomerAccountEntry
+from apps.customers.ledger import customer_balance
 from apps.inventory.models import StockBalance, StockMovement
 from .models import Sale, SaleItem, SaleReturn, SaleReturnItem
 from .permissions import SalesPermission
@@ -125,9 +126,16 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
                         raise ValidationError({"amount_paid": "For non-cash methods, the recorded amount must equal the sale total."})
                 customer = None
                 if values.get("customer") is not None:
-                    customer = Customer.objects.filter(pk=values["customer"], is_active=True).first()
+                    customer = Customer.objects.select_for_update().filter(pk=values["customer"], is_active=True).first()
                     if customer is None:
                         raise ValidationError({"customer": "Select an active customer record."})
+                if values["payment_method"] == Sale.PaymentMethod.CREDIT:
+                    if customer is None:
+                        raise ValidationError({"customer": "Credit sales require a linked customer record."})
+                    outstanding = customer_balance(customer)
+                    if customer.credit_limit <= 0 or outstanding + total > customer.credit_limit:
+                        available = max(Decimal("0.00"), customer.credit_limit - outstanding)
+                        raise ValidationError({"customer": f"Credit limit exceeded. Available credit: {available}."})
                 sale = Sale.objects.create(
                     sale_number=values["sale_number"], idempotency_key=key or None,
                     branch=branch, cashier=request.user, payment_method=values["payment_method"],
@@ -136,6 +144,16 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
                     customer_phone=customer.phone if customer else values.get("customer_phone", ""),
                     subtotal=subtotal, discount=discount, total=total, notes=values.get("notes", ""),
                 )
+                if sale.payment_method == Sale.PaymentMethod.CREDIT:
+                    CustomerAccountEntry.objects.create(
+                        customer=customer,
+                        entry_type=CustomerAccountEntry.EntryType.CHARGE,
+                        amount=total,
+                        sale=sale,
+                        reference=sale.sale_number,
+                        notes="Credit sale",
+                        created_by=request.user,
+                    )
                 for product, balance, quantity, price, line_total in lines:
                     balance.quantity_on_hand -= quantity
                     balance.save(update_fields=("quantity_on_hand", "updated_at"))
@@ -207,6 +225,16 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
                 sold_qty = SaleItem.objects.filter(sale=sale).aggregate(qty=Sum("quantity"))["qty"] or 0
                 sale.status = Sale.Status.REFUNDED if returned_qty == sold_qty else Sale.Status.PARTIALLY_REFUNDED
                 sale.save(update_fields=("refunded_total", "status"))
+                if sale.payment_method == Sale.PaymentMethod.CREDIT and sale.customer_id and total > 0:
+                    CustomerAccountEntry.objects.create(
+                        customer=sale.customer,
+                        entry_type=CustomerAccountEntry.EntryType.CREDIT_NOTE,
+                        amount=total,
+                        sale=sale,
+                        reference=sale_return.return_number,
+                        notes="Returned items from credit sale",
+                        created_by=request.user,
+                    )
                 return Response(SaleReturnSerializer(sale_return).data, status=status.HTTP_201_CREATED)
         except IntegrityError:
             raise ValidationError({"return_number": "Return number already exists."})
