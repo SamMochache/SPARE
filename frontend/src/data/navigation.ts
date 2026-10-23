@@ -33,7 +33,7 @@ export const navItems: NavItem[] = [
   planned: ['Stock levels with low and out-of-stock filters', 'Stock adjustments with reasons and approval', 'Transfers between branches', 'Damaged and returned goods tracking', 'Full movement history and valuation', 'Reorder suggestions']
 },
 {
-  label: 'Sales & Orders', path: '/sales', icon: ReceiptTextIcon, ready: false,
+  label: 'Sales & Orders', path: '/sales', icon: ReceiptTextIcon, ready: true,
   description: 'Sales history, receipts, returns and refunds.',
   planned: ['Searchable sales history with date, cashier and payment filters', 'Sale detail with items, payments and receipt', 'Return and refund requests with approval', 'Cancelled transaction tracking']
 },

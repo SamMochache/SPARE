@@ -2,7 +2,7 @@
 
 AutoParts Pro is an automotive parts shop management application. The repository contains a React, TypeScript, and Vite frontend and a Django REST API backend under active staged development.
 
-> **Integration status:** JWT authentication, product catalogue, branch-scoped inventory, and purchasing (suppliers, purchase orders, and goods receipts) are connected to Django. POS checkout, dashboard reporting, sales history, and customer records still contain prototype behavior. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
+> **Integration status:** JWT authentication, product catalogue, branch-scoped inventory, purchasing (suppliers, purchase orders, and goods receipts), and sales history/returns are connected to Django. POS checkout, dashboard reporting, and customer records still contain prototype behavior. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
 
 ## Repository layout
 
@@ -41,6 +41,16 @@ The Purchasing & Restocking screen is connected to Django suppliers and purchase
 
 The backend enforces branch scope, purchasing roles, valid order states, active suppliers/products, and outstanding receipt quantities. Supplier invoice matching, accounts payable, expected delivery dates, damaged-quantity workflows, and purchase-order editing UI are not included yet.
 
+## Sales history and returns
+
+The Sales & Orders screen reads transaction history from Django, supports receipt-number, status, payment-method and date filters, and displays sale lines and refund totals. Authorized owners, managers, and cashiers can record partial or full returns. The backend validates quantities and refund totals, updates branch stock, and appends return movements atomically. Sales and returns remain branch-scoped by the API.
+
+- `GET /api/v1/sales/` — list sales; supports `sale_number`, `status`, `payment_method`, `from`, and `to` filters.
+- `GET /api/v1/sales/{id}/` — sale detail.
+- `POST /api/v1/sales/{id}/returns/` — record a return using sale line IDs and quantities.
+
+M-Pesa remains a recorded payment method only; no real payment or refund is initiated or verified by this UI.
+
 ## Inventory screen
 
 Inventory Management uses the branch-scoped endpoints to display current balances and movement history. Owners can select any active branch; other users only receive their assigned branch. Owner stock receipts and adjustments include the selected branch ID. The backend validates permissions, prevents negative stock, and updates the balance and append-only movement ledger atomically.
@@ -73,6 +83,6 @@ See [backend/README.md](backend/README.md) for setup, API endpoints, permissions
 4. **Purchasing:** supplier management, draft/order/cancel workflows, partial goods receipt, and stock-ledger integration. Supplier invoicing and accounts payable remain future work.
 5. **POS and financial integrity:** transactional checkout, server-side totals, stock checks, idempotency, sale history, return/refund audit records. External payment-provider verification and settlement remain future work.
 6. **Reporting:** dashboard KPIs, daily sales, inventory valuation/low-stock, and top-product reports.
-7. **Remaining frontend integrations:** live POS, dashboard, purchases, sales history, customer records, and reports.
+7. **Remaining frontend integrations:** live POS checkout, dashboard, customer records, and reports.
 
 Each stage should be implemented on a focused feature branch and reviewed before merging. No CI/CD workflows are part of this implementation plan.
