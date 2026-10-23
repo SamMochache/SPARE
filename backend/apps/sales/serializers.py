@@ -18,6 +18,8 @@ class CheckoutSerializer(serializers.Serializer):
     customer_name = serializers.CharField(max_length=180, required=False, allow_blank=True)
     customer_phone = serializers.CharField(max_length=40, required=False, allow_blank=True)
     discount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, required=False, default=0)
+    expected_total = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, required=False)
+    amount_paid = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, required=False)
     notes = serializers.CharField(required=False, allow_blank=True)
     items = CheckoutItemSerializer(many=True, allow_empty=False)
 
