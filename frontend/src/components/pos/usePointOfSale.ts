@@ -213,7 +213,8 @@ export function usePointOfSale() {
 
   return {
     products,
-    customers: pickerCustomers,
+    customers,
+    pickerCustomers,
     heldSales,
     searchCustomers,
     items,
