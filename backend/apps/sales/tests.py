@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 from apps.accounts.models import Branch
 from apps.catalog.models import Category, Product
 from apps.inventory.models import StockBalance, StockMovement
-from apps.customers.models import Customer
+from apps.customers.models import Customer, CustomerAccountEntry
 from .models import Sale, SaleItem, SaleReturn
 
 User = get_user_model()
@@ -141,3 +141,80 @@ class SalesAPITests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(SaleReturn.objects.count(), 0)
+
+
+    def test_credit_sale_posts_customer_charge(self):
+        customer = Customer.objects.create(
+            name="Credit Garage",
+            credit_limit=Decimal("1500.00"),
+        )
+        response = self.client.post(
+            "/api/v1/sales/checkout/",
+            self.checkout_payload(payment_method="credit", customer=customer.pk),
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(
+            CustomerAccountEntry.objects.filter(
+                customer=customer,
+                entry_type=CustomerAccountEntry.EntryType.CHARGE,
+            ).count(),
+            1,
+        )
+        entry = CustomerAccountEntry.objects.get(customer=customer)
+        self.assertEqual(entry.amount, Decimal("1000.00"))
+        self.assertEqual(entry.sale_id, response.data["id"])
+
+    def test_credit_sale_over_limit_does_not_change_stock_or_create_sale(self):
+        customer = Customer.objects.create(
+            name="Small Credit Garage",
+            credit_limit=Decimal("500.00"),
+        )
+        response = self.client.post(
+            "/api/v1/sales/checkout/",
+            self.checkout_payload(payment_method="credit", customer=customer.pk),
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertEqual(Sale.objects.count(), 0)
+        self.assertEqual(CustomerAccountEntry.objects.filter(customer=customer).count(), 0)
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.quantity_on_hand, 10)
+
+    def test_credit_sale_return_posts_credit_note_and_reduces_balance(self):
+        customer = Customer.objects.create(
+            name="Returning Credit Garage",
+            credit_limit=Decimal("1500.00"),
+        )
+        created = self.client.post(
+            "/api/v1/sales/checkout/",
+            self.checkout_payload(payment_method="credit", customer=customer.pk),
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201, created.data)
+        sale_item_id = created.data["items"][0]["id"]
+        response = self.client.post(
+            f"/api/v1/sales/{created.data['id']}/returns/",
+            {
+                "return_number": "RET-CREDIT-1001",
+                "reason": "Incorrect part",
+                "refund_method": "credit",
+                "items": [{"sale_item": sale_item_id, "quantity": 1}],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        charge = CustomerAccountEntry.objects.get(
+            customer=customer,
+            entry_type=CustomerAccountEntry.EntryType.CHARGE,
+        )
+        credit_note = CustomerAccountEntry.objects.get(
+            customer=customer,
+            entry_type=CustomerAccountEntry.EntryType.CREDIT_NOTE,
+        )
+        self.assertEqual(charge.amount, Decimal("1000.00"))
+        self.assertEqual(credit_note.amount, Decimal("500.00"))
+        self.assertEqual(credit_note.sale_id, created.data["id"])
+        statement = self.client.get(f"/api/v1/customers/{customer.pk}/statement/")
+        self.assertEqual(statement.status_code, 200, statement.data)
+        self.assertEqual(statement.data["balance"], "500.00")
