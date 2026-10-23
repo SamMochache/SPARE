@@ -94,7 +94,7 @@ export function PointOfSale() {
           items={pos.items}
           totals={pos.totals}
           customer={pos.customer}
-          customers={pos.customers}
+          customers={pos.pickerCustomers}
           discount={pos.discount}
           note={pos.note}
           heldCount={pos.heldSales.length}
