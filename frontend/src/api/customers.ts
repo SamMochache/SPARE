@@ -16,6 +16,16 @@ export interface CustomerRecord {
   updated_at: string;
 }
 
+export interface CustomerSalesSummary {
+  customer_id: number;
+  count: number;
+  total_sales: string;
+  total_refunded: string;
+  results: import('./sales').SaleRecord[];
+  next?: string | null;
+  previous?: string | null;
+}
+
 export interface CustomerInput {
   name: string;
   phone?: string;
@@ -42,4 +52,8 @@ export function updateCustomer(id: number, input: Partial<CustomerInput>) {
 
 export function archiveCustomer(id: number) {
   return apiRequest<void>(`/api/v1/customers/${id}/`, { method: "DELETE" });
+}
+
+export function fetchCustomerSalesHistory(id: number) {
+  return apiRequest<CustomerSalesSummary>(`/api/v1/customers/${id}/sales/`);
 }
