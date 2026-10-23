@@ -17,6 +17,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Customer.objects.all()
+        if getattr(self, "action", None) == "restore":
+            return queryset
         active = self.request.query_params.get("is_active")
         if active is None or active.lower() in ("true", "1"):
             queryset = queryset.filter(is_active=True)
