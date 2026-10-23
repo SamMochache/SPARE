@@ -2,7 +2,7 @@
 
 AutoParts Pro is an automotive parts shop management application. The repository contains a React, TypeScript, and Vite frontend and a Django REST API backend under active staged development.
 
-> **Integration status:** JWT authentication, product catalogue, branch-scoped inventory, purchasing (suppliers, purchase orders, and goods receipts), and sales history/returns are connected to Django. POS checkout, dashboard reporting, and customer records still contain prototype behavior. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
+> **Integration status:** JWT authentication, product catalogue, branch-scoped inventory, purchasing (suppliers, purchase orders, and goods receipts), and sales history/returns are connected to Django. dashboard reporting and customer records still contain prototype behavior. POS checkout now records sales through Django; payment-provider verification and split/credit checkout are not connected. M-Pesa checkout is a simulation and does not initiate or verify real transactions. Do not treat the application as production-ready until remaining integrations and end-to-end tests are complete.
 
 ## Repository layout
 
@@ -81,8 +81,8 @@ See [backend/README.md](backend/README.md) for setup, API endpoints, permissions
 2. **Product catalogue:** categories, SKUs, prices, filtering, pagination, and role-protected CRUD/archive endpoints.
 3. **Inventory:** branch stock balances, append-only movement ledger, transactional receipts/adjustments, and live frontend integration.
 4. **Purchasing:** supplier management, draft/order/cancel workflows, partial goods receipt, and stock-ledger integration. Supplier invoicing and accounts payable remain future work.
-5. **POS and financial integrity:** transactional checkout, server-side totals, stock checks, idempotency, sale history, return/refund audit records. External payment-provider verification and settlement remain future work.
+5. **POS and financial integrity:** transactional checkout, server-side prices/totals, stock checks, idempotency, sale history, return/refund audit records. Payment-provider verification, split payments, customer credit accounting, and settlement remain future work.
 6. **Reporting:** dashboard KPIs, daily sales, inventory valuation/low-stock, and top-product reports.
-7. **Remaining frontend integrations:** live POS checkout, dashboard, customer records, and reports.
+7. **Remaining frontend integrations:** dashboard, customer records, and reports.
 
 Each stage should be implemented on a focused feature branch and reviewed before merging. No CI/CD workflows are part of this implementation plan.
