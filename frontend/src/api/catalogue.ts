@@ -49,27 +49,35 @@ async function getAll<T>(path: string): Promise<T[]> {
   return items;
 }
 
+function descriptionValue(description: string, key: string): string {
+  const line = description.split("\\n").find((part) => part.toLocaleLowerCase().startsWith(`${key.toLocaleLowerCase()}:`));
+  return line ? line.slice(line.indexOf(":") + 1).trim() : "";
+}
+
 function mapProduct(api: ApiProduct, quantity: number): Product {
+  const description = api.description || "";
+  const years = descriptionValue(description, "Years").split("-");
+  const models = descriptionValue(description, "Compatible models");
   return {
     id: api.id,
     name: api.name,
     sku: api.sku,
     barcode: api.barcode || "",
-    mpn: "",
+    mpn: descriptionValue(description, "MPN"),
     category: api.category_name || "",
     brand: api.brand || "",
-    vehicleMake: "",
-    compatibleModels: [],
-    yearFrom: null,
-    yearTo: null,
-    engine: "",
+    vehicleMake: descriptionValue(description, "Vehicle make"),
+    compatibleModels: models ? models.split(",").map((model) => model.trim()).filter(Boolean) : [],
+    yearFrom: years[0] && Number.isInteger(Number(years[0])) ? Number(years[0]) : null,
+    yearTo: years[1] && Number.isInteger(Number(years[1])) ? Number(years[1]) : null,
+    engine: descriptionValue(description, "Engine"),
     costPrice: Number(api.cost_price),
     sellingPrice: Number(api.selling_price),
     taxRate: 0.16,
     quantity,
     reorderLevel: 0,
-    supplier: "",
-    binLocation: "",
+    supplier: descriptionValue(description, "Preferred supplier"),
+    binLocation: descriptionValue(description, "Bin location"),
     imageUrl: "",
     status: api.is_active ? "active" : "inactive",
     updatedAt: api.updated_at
