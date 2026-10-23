@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 from apps.accounts.models import Branch
 from apps.catalog.models import Category, Product
 from apps.inventory.models import StockBalance, StockMovement
+from apps.customers.models import Customer
 from .models import Sale, SaleItem, SaleReturn
 
 User = get_user_model()
@@ -28,6 +29,22 @@ class SalesAPITests(TestCase):
         }
         data.update(overrides)
         return data
+
+    def test_checkout_links_customer_and_uses_database_snapshot(self):
+        customer = Customer.objects.create(name="Fleet Garage", phone="+254712345678")
+        response = self.client.post("/api/v1/sales/checkout/", self.checkout_payload(customer=customer.pk, customer_name="Forged Name", customer_phone="000"), format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        sale = Sale.objects.get(pk=response.data["id"])
+        self.assertEqual(sale.customer_id, customer.pk)
+        self.assertEqual(sale.customer_name, "Fleet Garage")
+        self.assertEqual(sale.customer_phone, "+254712345678")
+        self.assertEqual(response.data["customer_id"], customer.pk)
+
+    def test_checkout_rejects_archived_customer(self):
+        customer = Customer.objects.create(name="Archived Garage", phone="+254700000000", is_active=False)
+        response = self.client.post("/api/v1/sales/checkout/", self.checkout_payload(customer=customer.pk), format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Sale.objects.count(), 0)
 
     def test_checkout_calculates_total_and_decrements_stock(self):
         response = self.client.post("/api/v1/sales/checkout/", self.checkout_payload(), format="json")
