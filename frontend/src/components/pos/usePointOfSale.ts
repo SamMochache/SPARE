@@ -162,6 +162,7 @@ export function usePointOfSale() {
       sale_number: checkoutKey,
       idempotency_key: checkoutKey,
       payment_method: method,
+      customer: customer.id === WALK_IN_CUSTOMER_ID ? undefined : customer.id,
       customer_name: customer.id === WALK_IN_CUSTOMER_ID ? "" : customer.name,
       customer_phone: customer.id === WALK_IN_CUSTOMER_ID ? "" : customer.phone,
       discount: totals.discount.toFixed(2),

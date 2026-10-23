@@ -2,6 +2,7 @@ from django.db.models import Sum
 from rest_framework import serializers
 from apps.accounts.models import Branch
 from apps.catalog.models import Product
+from apps.customers.models import Customer
 from .models import Sale, SaleItem, SaleReturn, SaleReturnItem
 
 
@@ -15,6 +16,7 @@ class CheckoutSerializer(serializers.Serializer):
     sale_number = serializers.CharField(max_length=40)
     idempotency_key = serializers.CharField(max_length=128, required=False, allow_blank=False)
     payment_method = serializers.ChoiceField(choices=Sale.PaymentMethod.choices)
+    customer = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     customer_name = serializers.CharField(max_length=180, required=False, allow_blank=True)
     customer_phone = serializers.CharField(max_length=40, required=False, allow_blank=True)
     discount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, required=False, default=0)
@@ -22,6 +24,11 @@ class CheckoutSerializer(serializers.Serializer):
     amount_paid = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, required=False)
     notes = serializers.CharField(required=False, allow_blank=True)
     items = CheckoutItemSerializer(many=True, allow_empty=False)
+
+    def validate_customer(self, value):
+        if value is not None and not Customer.objects.filter(pk=value, is_active=True).exists():
+            raise serializers.ValidationError("Select an active customer record.")
+        return value
 
     def validate_items(self, items):
         ids = [item["product"] for item in items]
@@ -49,13 +56,14 @@ class SaleItemSerializer(serializers.ModelSerializer):
 
 class SaleSerializer(serializers.ModelSerializer):
     branch_name = serializers.CharField(source="branch.name", read_only=True)
+    customer_id = serializers.IntegerField(read_only=True, allow_null=True)
     cashier_username = serializers.CharField(source="cashier.username", read_only=True, default=None)
     items = SaleItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Sale
         fields = ("id", "sale_number", "idempotency_key", "branch", "branch_name", "cashier", "cashier_username",
-                  "status", "payment_method", "customer_name", "customer_phone", "subtotal", "discount", "total",
+                  "status", "payment_method", "customer_id", "customer_name", "customer_phone", "subtotal", "discount", "total",
                   "refunded_total", "notes", "created_at", "items")
         read_only_fields = fields
 

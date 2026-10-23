@@ -20,6 +20,7 @@ export interface SaleRecord {
   cashier_username: string | null;
   status: "completed" | "partially_refunded" | "refunded";
   payment_method: "cash" | "mpesa" | "card" | "bank" | "credit";
+  customer_id: number | null;
   customer_name: string;
   customer_phone: string;
   subtotal: string;
@@ -33,6 +34,7 @@ export interface SaleRecord {
 
 export interface SaleFilters {
   search?: string;
+  customer?: number;
   status?: string;
   paymentMethod?: string;
   from?: string;
@@ -49,6 +51,7 @@ export interface CreateReturnInput {
 function queryString(filters: SaleFilters) {
   const params = new URLSearchParams();
   if (filters.search?.trim()) params.set("sale_number", filters.search.trim());
+  if (filters.customer) params.set("customer", String(filters.customer));
   if (filters.status) params.set("status", filters.status);
   if (filters.paymentMethod) params.set("payment_method", filters.paymentMethod);
   if (filters.from) params.set("from", filters.from);
@@ -64,12 +67,27 @@ export async function fetchSales(filters: SaleFilters = {}): Promise<SaleRecord[
   return Array.isArray(response) ? response : response.results;
 }
 
+export interface CustomerSalesHistory {
+  count?: number;
+  customer_id: number;
+  total_sales?: string;
+  total_refunded?: string;
+  results: SaleRecord[];
+  next?: string | null;
+  previous?: string | null;
+}
+
+export function fetchCustomerSalesHistory(customerId: number) {
+  return apiRequest<CustomerSalesHistory>(`/api/v1/customers/${customerId}/sales/`);
+}
+
 export function createSaleReturn(saleId: number, input: CreateReturnInput) {
   return apiRequest<unknown>(`/api/v1/sales/${saleId}/returns/`, { method: "POST", body: input });
 }
 
 export interface CheckoutSaleInput {
   branch?: number;
+  customer?: number;
   sale_number: string;
   idempotency_key: string;
   payment_method: "cash" | "mpesa" | "card" | "bank";
