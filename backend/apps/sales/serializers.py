@@ -56,7 +56,7 @@ class SaleItemSerializer(serializers.ModelSerializer):
 
 class SaleSerializer(serializers.ModelSerializer):
     branch_name = serializers.CharField(source="branch.name", read_only=True)
-    customer_id = serializers.IntegerField(source="customer_id", read_only=True, allow_null=True)
+    customer_id = serializers.IntegerField(read_only=True, allow_null=True)
     cashier_username = serializers.CharField(source="cashier.username", read_only=True, default=None)
     items = SaleItemSerializer(many=True, read_only=True)
 
