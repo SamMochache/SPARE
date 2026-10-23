@@ -86,7 +86,7 @@ export function PointOfSale() {
           </select>
           {branchLoadError && <p role="alert" className="mt-1 text-xs text-rose-700">{branchLoadError}</p>}
         </div>}
-        <POSProductCatalog products={pos.products} cartQuantities={pos.cartQuantities} onAdd={pos.addToCart} searchRef={searchRef} />
+        <POSProductCatalog products={pos.products} cartQuantities={pos.cartQuantities} onAdd={pos.addToCart} searchRef={searchRef} loading={pos.productsLoading} error={pos.productsError} onRetry={() => { void pos.refreshProducts().catch(() => undefined); }} />
       </section>
 
       <aside id="pos-cart" className="lg:w-[400px] xl:w-[440px] shrink-0 border-t lg:border-t-0 lg:border-l border-line bg-white flex flex-col lg:min-h-0" aria-label="Current sale">
