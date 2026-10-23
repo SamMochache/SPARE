@@ -1,33 +1,47 @@
-import React from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { Toaster } from 'sonner';
-import { ApplicationLayout } from './components/layout/ApplicationLayout';
-import { AppDataProvider } from './contexts/AppDataContext';
-import { navItems } from './data/navigation';
-import { Dashboard } from './pages/Dashboard';
-import { ModulePlaceholder } from './pages/ModulePlaceholder';
-import { PointOfSale } from './pages/PointOfSale';
-import { Products } from './pages/Products';
+import React from "react";
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { Toaster } from "sonner";
+import { ApplicationLayout } from "./components/layout/ApplicationLayout";
+import { AppDataProvider } from "./contexts/AppDataContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { navItems } from "./data/navigation";
+import { Dashboard } from "./pages/Dashboard";
+import { Login } from "./pages/Login";
+import { ModulePlaceholder } from "./pages/ModulePlaceholder";
+import { PointOfSale } from "./pages/PointOfSale";
+import { Products } from "./pages/Products";
+
+function RequireAuth() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div className="min-h-screen grid place-items-center bg-canvas text-sm text-ink-muted">Loading your workspace…</div>;
+  }
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+  return <ApplicationLayout />;
+}
 
 export function App() {
   return (
-    <AppDataProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<ApplicationLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="pos" element={<PointOfSale />} />
-            <Route path="products" element={<Products />} />
-            {navItems.
-            filter((item) => !item.ready).
-            map((item) =>
-            <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />
-            )}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-right" closeButton richColors toastOptions={{ style: { fontFamily: 'Inter, system-ui, sans-serif' } }} />
-    </AppDataProvider>);
-
+    <AuthProvider>
+      <AppDataProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<RequireAuth />}>
+              <Route index element={<Dashboard />} />
+              <Route path="pos" element={<PointOfSale />} />
+              <Route path="products" element={<Products />} />
+              {navItems.filter((item) => !item.ready).map((item) => (
+                <Route key={item.path} path={item.path.slice(1)} element={<ModulePlaceholder item={item} />} />
+              ))}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-right" closeButton richColors toastOptions={{ style: { fontFamily: "Inter, system-ui, sans-serif" } }} />
+      </AppDataProvider>
+    </AuthProvider>
+  );
 }
