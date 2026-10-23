@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { ApplicationLayout } from "./components/layout/ApplicationLayout";
 import { AppDataProvider } from "./contexts/AppDataContext";
