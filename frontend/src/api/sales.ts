@@ -67,3 +67,19 @@ export async function fetchSales(filters: SaleFilters = {}): Promise<SaleRecord[
 export function createSaleReturn(saleId: number, input: CreateReturnInput) {
   return apiRequest<unknown>(`/api/v1/sales/${saleId}/returns/`, { method: "POST", body: input });
 }
+
+export interface CheckoutSaleInput {
+  branch?: number;
+  sale_number: string;
+  idempotency_key: string;
+  payment_method: "cash" | "mpesa" | "card" | "bank";
+  customer_name: string;
+  customer_phone: string;
+  discount: string;
+  notes: string;
+  items: Array<{ product: number; quantity: number }>;
+}
+
+export async function checkoutSale(input: CheckoutSaleInput): Promise<SaleRecord> {
+  return apiRequest<SaleRecord>("/api/v1/sales/checkout/", { method: "POST", body: input });
+}
