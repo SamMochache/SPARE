@@ -71,7 +71,7 @@ export interface CustomerAccountEntry {
   created_by: number | null;
   created_by_username: string | null;
   created_at: string;
-  running_balance: string;
+  running_balance?: string;
 }
 
 export interface CustomerStatement {
