@@ -180,7 +180,7 @@ def seed():
     print("SPARE demo seed complete.")
     print(f"Branches: {Branch.objects.count()}")
     print(f"Categories: {Category.objects.count()}")
-    print(f"Products: {Product.objects.filter(sku__startswith=('ENG-', 'BRK-', 'FLT-', 'ELC-', 'SUS-', 'CLG-')).count()}")
+    print(f"Products: {Product.objects.filter(sku__in=list(products.keys())).count()}")
     print(f"Suppliers: {Supplier.objects.count()}")
     print(f"Customers: {Customer.objects.count()}")
     print(f"New stock balances created this run: {stock_created}")
